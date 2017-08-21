@@ -1,5 +1,7 @@
 package logic;
 
+import org.icepdf.core.exceptions.PDFException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.ri.common.SwingController;
@@ -8,12 +10,13 @@ import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class PDFViewerController {
     private ArrayList<SwingController> controllers;
 
-    private String file;
+    private Document pdf;
 
     public PDFViewerController() {
         this.controllers = new ArrayList<>();
@@ -32,6 +35,10 @@ public class PDFViewerController {
         }
 
         controllers.add(controller);
+    }
+
+    public boolean isDocumentSelected() {
+        return pdf != null;
     }
 
     public SwingController getController(int contrID) {
@@ -58,17 +65,15 @@ public class PDFViewerController {
             } else {
                 c.getDocumentViewController().setFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
             }
-
-//            c.setPageViewMode(DocumentViewControllerImpl.ONE_PAGE_VIEW, true);
-
-
-//           ((JFrame) SwingUtilities.getWindowAncestor(parent)).pack();
-
         });
     }
 
     public void nextPage() {
         controllers.forEach(c -> c.goToDeltaPage(c.getDocumentViewController().getDocumentView().getNextPageIncrement()));
+    }
+
+    public void prevPage() {
+        controllers.forEach(c -> c.goToDeltaPage(-c.getDocumentViewController().getDocumentView().getPreviousPageIncrement()));
     }
 
     public int getCurrentPageNumber() {
@@ -79,8 +84,9 @@ public class PDFViewerController {
         controllers.forEach(c -> c.showPage(0));
     }
 
-    public void loadNewFile(String file) {
-        this.file = file;
-        controllers.forEach(c -> c.openDocument(file));
+    public void loadNewFile(String file) throws IOException, PDFException, PDFSecurityException {
+        pdf = new Document();
+        pdf.setFile(file);
+        controllers.forEach(c -> c.openDocument(pdf, "PechaKuchaPDF"));
     }
 }

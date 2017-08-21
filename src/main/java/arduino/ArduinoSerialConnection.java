@@ -84,6 +84,10 @@ public class ArduinoSerialConnection {
     }
 
     public synchronized void send(String content) {
+        if (serialPort == null) {
+            return;
+        }
+
         try {
             for (char c : content.toCharArray()) {
                 output.write(c);

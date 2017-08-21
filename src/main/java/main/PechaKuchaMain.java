@@ -3,15 +3,19 @@ package main;
 import arduino.ArduinoSerialConnection;
 import logic.PDFViewerController;
 import logic.ScreenSetupFrame;
+import org.icepdf.core.exceptions.PDFException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.Defs;
 
 import javax.swing.*;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
 
 
 public class PechaKuchaMain {
@@ -81,7 +85,11 @@ public class PechaKuchaMain {
 
         JMenuItem openFile = new JMenuItem("Open File");
         openFile.addActionListener(e -> {
-            pdfViewerController.loadNewFile(openDocument(lookupFrame).getAbsolutePath());
+            try {
+                pdfViewerController.loadNewFile(openDocument(lookupFrame).getAbsolutePath());
+            } catch (IOException | PDFException | PDFSecurityException err) {
+                err.printStackTrace();
+            }
             pdfViewerController.fitViewers();
         });
         openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
@@ -155,17 +163,25 @@ public class PechaKuchaMain {
         // keyboard
         KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         kfm.addKeyEventDispatcher((KeyEvent e) -> {
-            if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_SPACE && !t.isRunning()) {
-                t.start();
-                presStartTime[0] = System.currentTimeMillis();
-                nextPageTime[0] = presStartTime[0] + 20_000;
-                nextSecTime[0] = presStartTime[0] + 1_000;
-            } else if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_R && t.isRunning()) {
-                t.stop();
-                pdfViewerController.gotoFirst();
-                timeRemainingLabel.setText("20");
-                arduinoConn.send("20");
-                timeRemaining[0] = 20;
+            int kc = e.getKeyCode();
+
+            if (e.getID() == KeyEvent.KEY_PRESSED && pdfViewerController.isDocumentSelected()) {
+                if (kc == KeyEvent.VK_SPACE && !t.isRunning()) {
+                    t.start();
+                    presStartTime[0] = System.currentTimeMillis();
+                    nextPageTime[0] = presStartTime[0] + 20_000;
+                    nextSecTime[0] = presStartTime[0] + 1_000;
+                } else if (kc == KeyEvent.VK_R && t.isRunning()) {
+                    t.stop();
+                    pdfViewerController.gotoFirst();
+                    timeRemainingLabel.setText("20");
+                    arduinoConn.send("20");
+                    timeRemaining[0] = 20;
+                } else if ((kc == KeyEvent.VK_RIGHT || kc == KeyEvent.VK_DOWN || kc == KeyEvent.VK_PAGE_DOWN) && !t.isRunning()) {
+                    pdfViewerController.nextPage();
+                } else if ((kc == KeyEvent.VK_LEFT || kc == KeyEvent.VK_UP || kc == KeyEvent.VK_PAGE_UP) && !t.isRunning()) {
+                    pdfViewerController.prevPage();
+                }
             }
 
             return false;

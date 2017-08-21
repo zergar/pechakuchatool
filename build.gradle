@@ -10,7 +10,7 @@ mainClassName = 'main.PechaKuchaMain'
 
 jar {
     manifest{
-        attributes 'Main-Class': 'org.tuberlin.fak4.main.PechaKuchaMain'
+        attributes 'Main-Class': 'main.PechaKuchaMain'
     }
 }
 
