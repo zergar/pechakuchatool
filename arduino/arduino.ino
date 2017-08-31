@@ -7,7 +7,7 @@
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(40, PIN, NEO_GRB + NEO_KHZ800);
 
 
-int ciphers[10][21] = {
+int ciphers[10][15] = {
   {
     1, 1, 1,
     1, 0, 1,
@@ -128,7 +128,7 @@ void showCiphers(int ciph1, int ciph2) {
 //    Serial.print(combine[i]);
     strip.setPixelColor(i, combine[i] * strip.Color(255, 255, 255));
   }
-  strip.setBrightness(2);
+  strip.setBrightness(1);
   strip.show();
 }
 

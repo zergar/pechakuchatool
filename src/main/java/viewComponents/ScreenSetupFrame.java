@@ -1,10 +1,10 @@
-package logic;
+package viewComponents;
+
+import dto.SetupDTO;
 
 import javax.swing.*;
 import javax.swing.event.ListDataListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 public class ScreenSetupFrame extends JDialog {
@@ -13,6 +13,9 @@ public class ScreenSetupFrame extends JDialog {
     private JButton startButton;
     private JButton exitButton;
     private JPanel mainPanel;
+    private JComboBox pdfViewerChooser;
+
+    private static final String[] PDF_VIEWERS = {"icepdf", "pdftoppm-local"};
 
     public ScreenSetupFrame() {
         $$$setupUI$$$();
@@ -45,7 +48,7 @@ public class ScreenSetupFrame extends JDialog {
     }
 
 
-    public static GraphicsDevice[] getSettings() {
+    public static SetupDTO getSettings() {
         ScreenSetupFrame screenSetupFrame = new ScreenSetupFrame();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gs = ge.getScreenDevices();
@@ -55,6 +58,7 @@ public class ScreenSetupFrame extends JDialog {
             screenSetupFrame.presScreenChooser.addItem(g);
             screenSetupFrame.lookupScreenChooser.addItem(g);
         }
+
 
         screenSetupFrame.presScreenChooser.setSelectedIndex(gs.length > 1 ? 1 : 0);
         screenSetupFrame.lookupScreenChooser.setSelectedIndex(0);
@@ -66,15 +70,16 @@ public class ScreenSetupFrame extends JDialog {
         screenSetupFrame.startButton.requestFocus();
 
 
-        return new GraphicsDevice[]
-                {(GraphicsDevice) screenSetupFrame.presScreenChooser.getSelectedItem(),
-                        (GraphicsDevice) screenSetupFrame.lookupScreenChooser.getSelectedItem()};
+        return new SetupDTO((GraphicsDevice) screenSetupFrame.presScreenChooser.getSelectedItem(),
+                (GraphicsDevice) screenSetupFrame.lookupScreenChooser.getSelectedItem(),
+                (String) screenSetupFrame.pdfViewerChooser.getSelectedItem());
     }
 
     private void createUIComponents() {
         presScreenChooser = new JComboBox(new GraphicsDeviceModel());
         lookupScreenChooser = new JComboBox(new GraphicsDeviceModel());
 
+        pdfViewerChooser = new JComboBox(PDF_VIEWERS);
     }
 
     /**
@@ -154,7 +159,7 @@ public class ScreenSetupFrame extends JDialog {
         panel1.add(spacer3, gbc);
         final JPanel spacer4 = new JPanel();
         gbc = new GridBagConstraints();
-        gbc.gridx = 2;
+        gbc.gridx = 3;
         gbc.gridy = 4;
         gbc.fill = GridBagConstraints.VERTICAL;
         panel1.add(spacer4, gbc);
@@ -176,6 +181,31 @@ public class ScreenSetupFrame extends JDialog {
         gbc.gridy = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel1.add(spacer7, gbc);
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 5;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(pdfViewerChooser, gbc);
+        final JLabel label4 = new JLabel();
+        label4.setText("PDF-Viewer");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 5;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel1.add(label4, gbc);
+        final JPanel spacer8 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 5;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(spacer8, gbc);
+        final JPanel spacer9 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 6;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        panel1.add(spacer9, gbc);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
@@ -185,12 +215,12 @@ public class ScreenSetupFrame extends JDialog {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(panel2, gbc);
-        final JPanel spacer8 = new JPanel();
+        final JPanel spacer10 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer8, gbc);
+        panel2.add(spacer10, gbc);
         startButton = new JButton();
         startButton.setText("Start");
         gbc = new GridBagConstraints();
@@ -207,24 +237,24 @@ public class ScreenSetupFrame extends JDialog {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel2.add(exitButton, gbc);
-        final JPanel spacer9 = new JPanel();
+        final JPanel spacer11 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 4;
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.VERTICAL;
-        panel2.add(spacer9, gbc);
-        final JPanel spacer10 = new JPanel();
+        panel2.add(spacer11, gbc);
+        final JPanel spacer12 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 5;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer10, gbc);
-        final JPanel spacer11 = new JPanel();
+        panel2.add(spacer12, gbc);
+        final JPanel spacer13 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 3;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer11, gbc);
+        panel2.add(spacer13, gbc);
     }
 
     /**

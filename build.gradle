@@ -8,12 +8,6 @@ sourceCompatibility = 1.8
 
 mainClassName = 'main.PechaKuchaMain'
 
-jar {
-    manifest{
-        attributes 'Main-Class': 'main.PechaKuchaMain'
-    }
-}
-
 repositories {
     maven { url 'http://download.osgeo.org/webdav/geotools/' }
     mavenCentral()
@@ -25,6 +19,9 @@ dependencies {
     compile "org.icepdf.os:icepdf-core:6.2.2"
     compile "org.icepdf.os:icepdf-viewer:6.2.2"
     compile 'com.levigo.jbig2:levigo-jbig2-imageio:2.0'
+
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
 
     compile 'org.bidib.jbidib.org.qbang.rxtx:rxtxcomm:2.2'
 

@@ -1,52 +1,72 @@
 package main;
 
 import arduino.ArduinoSerialConnection;
+import dto.SetupDTO;
 import logic.PDFViewerController;
-import logic.ScreenSetupFrame;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.Defs;
+import viewComponents.ScreenSetupFrame;
 
 import javax.swing.*;
-import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class PechaKuchaMain {
-    private static JFileChooser chooser = new JFileChooser();
+    private JFileChooser chooser = new JFileChooser();
 
-    private static ArduinoSerialConnection arduinoConn;
+    private ArduinoSerialConnection arduinoConn;
 
-    private static final String PORT_NAMES[] = {
-            "/dev/tty.usbmodem", // Mac OS X
-            "/dev/usbdev", // Linux
-            "/dev/tty", // Linux
-            "/dev/serial", // Linux
-            "COM3", // Windows
-    };
-    private static JLabel timeRemainingLabel;
+    private JLabel timeRemainingLabel;
 
-    public static void main(String[] args) {
+    private AtomicLong presStartTime,
+            nextPageTime,
+            nextSecTime,
+            timeRemaining;
+
+    private ExecutorService threadPool = Executors.newCachedThreadPool();
+
+    private String pdfViewerType;
+
+
+    public PechaKuchaMain(String pdfViewerType) {
+        this.presStartTime = new AtomicLong(-1);
+        this.nextPageTime = new AtomicLong(-1);
+        this.nextSecTime = new AtomicLong(-1);
+        this.timeRemaining = new AtomicLong(20);
+
+        this.pdfViewerType = pdfViewerType;
+
+        setup();
+    }
+
+    public PechaKuchaMain() {
+        this("");
+    }
+
+    private void setup() {
         // Setup
-        String filePath = "/home/gereon/UNI/SoSe 2017/IG/Folien/UE_01_WissArb1.pdf";
         Defs.setSystemProperty("org.icepdf.core.views.background.color", "000000");
 
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "PDF-Documents", "pdf");
         chooser.setFileFilter(filter);
 
-        PDFViewerController pdfViewerController = new PDFViewerController();
+        SetupDTO settings = ScreenSetupFrame.getSettings();
+        pdfViewerType = settings.getPdfViewer();
 
-        pdfViewerController.createNewController();
-        pdfViewerController.createNewController();
+        System.out.println(pdfViewerType);
 
-        GraphicsDevice[] graphicsSettings = ScreenSetupFrame.getSettings();
+        PDFViewerController pdfViewerController = PDFViewerController.createNewControllersByName(pdfViewerType, 2);
 
 
         // arduino
@@ -56,17 +76,17 @@ public class PechaKuchaMain {
 
 
         // presentation-frame
-        JFrame presFrame = new JFrame();
+        JFrame presFrame = new JFrame("PechaKucha Presentation-Window");
         presFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         presFrame.getContentPane().add(pdfViewerController.getDocContainer(0));
 
 
         presFrame.pack();
-        showOnScreen(graphicsSettings[0], presFrame, true);
+        showOnScreen(settings.getPresentationScreen(), presFrame, true);
 
 
         // lookup-frame
-        JFrame lookupFrame = new JFrame("PechaKucha");
+        JFrame lookupFrame = new JFrame("PechaKucha Presentation-Tool");
         Container lookupPane = lookupFrame.getContentPane();
         lookupPane.setLayout(new BoxLayout(lookupPane, BoxLayout.X_AXIS));
 
@@ -87,19 +107,19 @@ public class PechaKuchaMain {
         openFile.addActionListener(e -> {
             try {
                 pdfViewerController.loadNewFile(openDocument(lookupFrame).getAbsolutePath());
-            } catch (IOException | PDFException | PDFSecurityException err) {
+            } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException err) {
                 err.printStackTrace();
             }
             pdfViewerController.fitViewers();
         });
-        openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+        openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
         fileMenu.add(openFile);
 
         fileMenu.addSeparator();
 
         JMenuItem exit = new JMenuItem("Exit");
         exit.addActionListener(e -> exit());
-        exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, ActionEvent.ALT_MASK));
+        exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.ALT_MASK));
         fileMenu.add(exit);
 
 
@@ -122,7 +142,7 @@ public class PechaKuchaMain {
 
         lookupFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         lookupFrame.pack();
-        showOnScreen(graphicsSettings[1], lookupFrame, false);
+        showOnScreen(settings.getLookupScreen(), lookupFrame, false);
 
         presFrame.setVisible(true);
         lookupFrame.setVisible(true);
@@ -138,25 +158,26 @@ public class PechaKuchaMain {
 
 
         // timer
-        final long[] presStartTime = {-1L},
-                nextPageTime = {-1L},
-                nextSecTime = {-1L},
-                timeRemaining = {20};
+//        final long[] presStartTime = {-1L},
+//                nextPageTime = {-1L},
+//                nextSecTime = {-1L},
+//                timeRemaining = {20};
 
-        Timer t = new Timer(3, e -> {
-            if (System.currentTimeMillis() >= nextPageTime[0]) {
+        Timer t = new Timer(4, e -> {
+            if (System.currentTimeMillis() >= nextPageTime.get()) {
                 pdfViewerController.nextPage();
-                nextPageTime[0] = presStartTime[0] + ((pdfViewerController.getCurrentPageNumber() + 1) * 20_000L);
-                timeRemaining[0] = 20;
+                nextPageTime.set(presStartTime.get() + ((pdfViewerController.getCurrentPageNumber() + 1) * 20_000L));
+                timeRemaining.set(20);
             }
 
-            if (System.currentTimeMillis() >= nextSecTime[0]) {
-                String timeString = String.format("%02d", timeRemaining[0]);
+            if (System.currentTimeMillis() >= nextSecTime.get()) {
+                String timeString = String.format("%02d", timeRemaining.get());
                 updateSeconds(timeString);
-                timeRemaining[0]--;
-                nextSecTime[0] = nextPageTime[0] - (timeRemaining[0] * 1_000);
+//                timeRemaining[0]--;
+                timeRemaining.decrementAndGet();
+//                nextSecTime[0] = nextPageTime[0] - (timeRemaining[0] * 1_000);
+                nextSecTime.set(nextPageTime.get() - (timeRemaining.get() * 1_000));
             }
-
         });
 
 
@@ -167,16 +188,21 @@ public class PechaKuchaMain {
 
             if (e.getID() == KeyEvent.KEY_PRESSED && pdfViewerController.isDocumentSelected()) {
                 if (kc == KeyEvent.VK_SPACE && !t.isRunning()) {
+                    pdfViewerController.gotoFirst();
+
+                    long pStart = System.currentTimeMillis();
+                    presStartTime.set(pStart);
+                    nextPageTime.set(pStart + 20_000);
+                    nextSecTime.set(pStart + 1_000);
+
                     t.start();
-                    presStartTime[0] = System.currentTimeMillis();
-                    nextPageTime[0] = presStartTime[0] + 20_000;
-                    nextSecTime[0] = presStartTime[0] + 1_000;
+
                 } else if (kc == KeyEvent.VK_R && t.isRunning()) {
                     t.stop();
                     pdfViewerController.gotoFirst();
                     timeRemainingLabel.setText("20");
                     arduinoConn.send("20");
-                    timeRemaining[0] = 20;
+                    timeRemaining.set(20);
                 } else if ((kc == KeyEvent.VK_RIGHT || kc == KeyEvent.VK_DOWN || kc == KeyEvent.VK_PAGE_DOWN) && !t.isRunning()) {
                     pdfViewerController.nextPage();
                 } else if ((kc == KeyEvent.VK_LEFT || kc == KeyEvent.VK_UP || kc == KeyEvent.VK_PAGE_UP) && !t.isRunning()) {
@@ -198,7 +224,7 @@ public class PechaKuchaMain {
         }
     }
 
-    private static File openDocument(JFrame parent) {
+    private File openDocument(JFrame parent) {
         int returnVal = chooser.showOpenDialog(parent);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             return chooser.getSelectedFile();
@@ -207,13 +233,23 @@ public class PechaKuchaMain {
         }
     }
 
-    private static void exit() {
+    private void exit() {
         arduinoConn.close();
         System.exit(0);
     }
 
-    private static void updateSeconds(String sec) {
-        EventQueue.invokeLater(() -> timeRemainingLabel.setText(sec));
-        arduinoConn.send(sec);
+    private void updateSeconds(final String sec) {
+//        System.out.printf("%d, %d, %d\n", System.currentTimeMillis(), nextSecTime.get(), presStartTime.get());
+
+        threadPool.submit(() -> {
+            timeRemainingLabel.setText(sec);
+            timeRemainingLabel.paintImmediately(timeRemainingLabel.getVisibleRect());
+        });
+
+        threadPool.submit(() -> arduinoConn.send(sec));
+    }
+
+    public static void main(String[] args) {
+        new PechaKuchaMain("pdftoppm-local");
     }
 }
