@@ -77,9 +77,15 @@ Advantages of this renderer are that it is fast on startup, but might have some 
 This is the second renderer, requiring [poppler-utils](https://poppler.freedesktop.org/) to be installed and accessible on the system (e.g. by adding it to the path).
 Advantages are correct rendering and quick page changes, while requiring a long waiting period during the initial loading phase of up to 30 seconds.
 
+## Building the program
+
+For building the program, type `./gradlew run` on UNIX-based systems or `gradlew.bat run` if using Windows.
+For building the jar type `./gradlew fatJar` on UNIX-based systems or `gradlew.bat fatJar` if using Windows.
+
+
 ## Feedback / Improvements
 
-If you have any issues feel free to write an issue or set a pull request.
+Feel free to write an issue or set a pull request if you encounter any problems.
 
 
 Gereon Dusella for ISE @ TU Berlin
