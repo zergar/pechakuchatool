@@ -14,8 +14,10 @@ public class ScreenSetupFrame extends JDialog {
     private JButton exitButton;
     private JPanel mainPanel;
     private JComboBox pdfViewerChooser;
+    private JComboBox arduinoConnChooser;
 
     private static final String[] PDF_VIEWERS = {"icepdf", "pdftoppm-local"};
+    private static final String[] NO_YES = {"No", "Yes"};
 
     public ScreenSetupFrame() {
         $$$setupUI$$$();
@@ -25,6 +27,7 @@ public class ScreenSetupFrame extends JDialog {
         setContentPane(mainPanel);
 //        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
+        startButton.requestFocus();
     }
 
 
@@ -72,7 +75,8 @@ public class ScreenSetupFrame extends JDialog {
 
         return new SetupDTO((GraphicsDevice) screenSetupFrame.presScreenChooser.getSelectedItem(),
                 (GraphicsDevice) screenSetupFrame.lookupScreenChooser.getSelectedItem(),
-                (String) screenSetupFrame.pdfViewerChooser.getSelectedItem());
+                (String) screenSetupFrame.pdfViewerChooser.getSelectedItem(),
+                (screenSetupFrame.arduinoConnChooser.getSelectedIndex() == 1));
     }
 
     private void createUIComponents() {
@@ -80,6 +84,7 @@ public class ScreenSetupFrame extends JDialog {
         lookupScreenChooser = new JComboBox(new GraphicsDeviceModel());
 
         pdfViewerChooser = new JComboBox(PDF_VIEWERS);
+        arduinoConnChooser = new JComboBox(NO_YES);
     }
 
     /**
@@ -206,6 +211,31 @@ public class ScreenSetupFrame extends JDialog {
         gbc.gridy = 6;
         gbc.fill = GridBagConstraints.VERTICAL;
         panel1.add(spacer9, gbc);
+        final JLabel label5 = new JLabel();
+        label5.setText("Arduino-Connection?");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 7;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel1.add(label5, gbc);
+        final JPanel spacer10 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 8;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        panel1.add(spacer10, gbc);
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 7;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(arduinoConnChooser, gbc);
+        final JPanel spacer11 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 7;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(spacer11, gbc);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
@@ -215,12 +245,12 @@ public class ScreenSetupFrame extends JDialog {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(panel2, gbc);
-        final JPanel spacer10 = new JPanel();
+        final JPanel spacer12 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer10, gbc);
+        panel2.add(spacer12, gbc);
         startButton = new JButton();
         startButton.setText("Start");
         gbc = new GridBagConstraints();
@@ -237,24 +267,24 @@ public class ScreenSetupFrame extends JDialog {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel2.add(exitButton, gbc);
-        final JPanel spacer11 = new JPanel();
+        final JPanel spacer13 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 4;
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.VERTICAL;
-        panel2.add(spacer11, gbc);
-        final JPanel spacer12 = new JPanel();
+        panel2.add(spacer13, gbc);
+        final JPanel spacer14 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 5;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer12, gbc);
-        final JPanel spacer13 = new JPanel();
+        panel2.add(spacer14, gbc);
+        final JPanel spacer15 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 3;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer13, gbc);
+        panel2.add(spacer15, gbc);
     }
 
     /**
@@ -263,6 +293,7 @@ public class ScreenSetupFrame extends JDialog {
     public JComponent $$$getRootComponent$$$() {
         return mainPanel;
     }
+
 
     private class GraphicsDeviceModel implements MutableComboBoxModel<GraphicsDevice> {
 

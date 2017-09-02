@@ -13,15 +13,29 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * A concrete implementation of a {@link PDFViewerController} using the IcePDF-library for PDF rendering.
+ * @see <a href="http://www.icesoft.org/java/projects/ICEpdf/overview.jsf">IcePDF project page</a>
+ */
 public class IcePDFController implements PDFViewerController {
+    /**
+     * The {@link SwingController}s of the different displayed renders.
+     */
     private ArrayList<SwingController> controllers;
 
+    /**
+     * The PDF-document to be displayed.
+     */
     private Document pdf;
 
+    /**
+     * The constructor.
+     */
     IcePDFController() {
         this.controllers = new ArrayList<>();
     }
 
+    @Override
     public void createNewController() {
         SwingController controller = new SwingController();
         controller.setIsEmbeddedComponent(true);
@@ -44,14 +58,17 @@ public class IcePDFController implements PDFViewerController {
         }
     }
 
+    @Override
     public boolean isDocumentSelected() {
         return pdf != null;
     }
 
+    @Override
     public Container getDocContainer(int contrID) {
         return controllers.get(contrID).getDocumentViewController().getViewContainer();
     }
 
+    @Override
     public void fitViewers() {
         controllers.forEach(c -> {
             Container pane = c.getDocumentViewController().getViewContainer();
@@ -71,25 +88,32 @@ public class IcePDFController implements PDFViewerController {
         });
     }
 
+    @Override
     public void nextPage() {
         controllers.forEach(c -> c.goToDeltaPage(c.getDocumentViewController().getDocumentView().getNextPageIncrement()));
     }
 
+    @Override
     public void prevPage() {
         controllers.forEach(c -> c.goToDeltaPage(-c.getDocumentViewController().getDocumentView().getPreviousPageIncrement()));
     }
 
+    @Override
     public int getCurrentPageNumber() {
         return controllers.get(0).getCurrentPageNumber();
     }
 
+    @Override
     public void gotoFirst() {
         controllers.forEach(c -> c.showPage(0));
     }
 
+    @Override
     public void loadNewFile(String filePath) throws IOException, PDFException, PDFSecurityException {
         pdf = new Document();
         pdf.setFile(filePath);
         controllers.forEach(c -> c.openDocument(pdf, "PechaKuchaPDF"));
+
+        fitViewers();
     }
 }

@@ -3,7 +3,7 @@
 #include <avr/power.h>
 #endif
 #define PIN 13
-//Grundeinstellung (Anzahl der LEDs, usw.)
+//Default settings (Anzahl der LEDs, usw.)
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(40, PIN, NEO_GRB + NEO_KHZ800);
 
 

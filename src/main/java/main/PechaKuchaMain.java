@@ -18,41 +18,97 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-
+/**
+ * This is the main class of the PechaKuchaTool. It contains the startup-routines as well as the logic for building the frames.
+ */
 public class PechaKuchaMain {
+    /**
+     * A {@link JFileChooser} for picking the files to load.
+     */
     private JFileChooser chooser = new JFileChooser();
 
+    /**
+     * The {@link ArduinoSerialConnection} for connecting to an Arduino.
+     */
     private ArduinoSerialConnection arduinoConn;
 
+    /**
+     * The {@link JLabel} which contains the remaining seconds.
+     */
     private JLabel timeRemainingLabel;
 
-    private AtomicLong presStartTime,
-            nextPageTime,
-            nextSecTime,
-            timeRemaining;
+    /**
+     * The {@link System#currentTimeMillis()} of the presentations' start.
+     */
+    private AtomicLong presStartTime;
 
+    /**
+     * The UNIX-Time of the next page-change.
+     */
+    private AtomicLong nextPageTime;
+
+    /**
+     * The UNIX-Time of the next seconds-change on the timerRemainingLabel
+     */
+    private AtomicLong nextSecTime;
+
+    /**
+     * The current displayed value on the timeRemainingLabel
+     */
+    private AtomicInteger timeRemaining;
+
+    /**
+     * A thread-pool for asynchronous tasks
+     */
     private ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    private String pdfViewerType;
+    /**
+     * The settings of the current launch, usually fetched by {@link ScreenSetupFrame#getSettings()} and wrapped inside a {@link SetupDTO}.
+     */
+    private SetupDTO settings;
+
+    private PDFViewerController pdfViewerController;
 
 
-    public PechaKuchaMain(String pdfViewerType) {
+    /**
+     * Default constructor for running the PechaKuchaTool.
+     *
+     * @param settings The settings of the current launch.
+     */
+    public PechaKuchaMain(SetupDTO settings) {
         this.presStartTime = new AtomicLong(-1);
         this.nextPageTime = new AtomicLong(-1);
         this.nextSecTime = new AtomicLong(-1);
-        this.timeRemaining = new AtomicLong(20);
+        this.timeRemaining = new AtomicInteger(20);
 
-        this.pdfViewerType = pdfViewerType;
+        this.settings = settings;
 
         setup();
     }
 
-    public PechaKuchaMain() {
-        this("");
+    /**
+     * Constructor allowing to set an initial file which is then loaded after the program has been started successfully.
+     *
+     * @param settings The settings of the current launch.
+     * @param path The path of a to-load file.
+     */
+    public PechaKuchaMain(SetupDTO settings, String path) {
+        this.presStartTime = new AtomicLong(-1);
+        this.nextPageTime = new AtomicLong(-1);
+        this.nextSecTime = new AtomicLong(-1);
+        this.timeRemaining = new AtomicInteger(20);
+
+        this.settings = settings;
+
+        setup(path);
     }
 
+    /**
+     * the setup-routine
+     */
     private void setup() {
         // Setup
         Defs.setSystemProperty("org.icepdf.core.views.background.color", "000000");
@@ -61,16 +117,12 @@ public class PechaKuchaMain {
                 "PDF-Documents", "pdf");
         chooser.setFileFilter(filter);
 
-        SetupDTO settings = ScreenSetupFrame.getSettings();
-        pdfViewerType = settings.getPdfViewer();
 
-        System.out.println(pdfViewerType);
-
-        PDFViewerController pdfViewerController = PDFViewerController.createNewControllersByName(pdfViewerType, 2);
+        pdfViewerController = PDFViewerController.createNewControllersByName(settings.getPdfViewer(), 2);
 
 
         // arduino
-        arduinoConn = new ArduinoSerialConnection();
+        arduinoConn = new ArduinoSerialConnection(settings.isEstablishArduinoConn());
         arduinoConn.initialize();
         arduinoConn.send("20");
 
@@ -110,7 +162,6 @@ public class PechaKuchaMain {
             } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException err) {
                 err.printStackTrace();
             }
-            pdfViewerController.fitViewers();
         });
         openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
         fileMenu.add(openFile);
@@ -134,6 +185,15 @@ public class PechaKuchaMain {
         resetPres.setMnemonic(KeyEvent.VK_R);
         presMenu.add(resetPres);
 
+        JMenu viewMenu = new JMenu("View");
+        menuBar.add(viewMenu);
+
+        JMenuItem fitPage = new JMenuItem("Fit Page");
+        fitPage.setMnemonic(KeyEvent.VK_F);
+        fitPage.addActionListener(e -> pdfViewerController.fitViewers());
+        viewMenu.add(fitPage);
+
+
         lookupFrame.setJMenuBar(menuBar);
 
 
@@ -156,12 +216,7 @@ public class PechaKuchaMain {
         timePanel.setPreferredSize(new Dimension((int) (screenWidth * 0.2), lookupFrame.getHeight()));
         pdfViewerController.getDocContainer(1).setPreferredSize(new Dimension((int) (screenWidth * 0.75), lookupFrame.getHeight()));
 
-
         // timer
-//        final long[] presStartTime = {-1L},
-//                nextPageTime = {-1L},
-//                nextSecTime = {-1L},
-//                timeRemaining = {20};
 
         Timer t = new Timer(4, e -> {
             if (System.currentTimeMillis() >= nextPageTime.get()) {
@@ -214,6 +269,27 @@ public class PechaKuchaMain {
         });
     }
 
+    /**
+     * Overlaoded setup-method which additionally loads a file right at the end.
+     * @param path The path to the file to load.
+     */
+    private void setup(String path) {
+        setup();
+
+        try {
+            pdfViewerController.loadNewFile(path);
+        } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+
+        }
+    }
+
+    /**
+     * Sets the screen on which a frame should be shown.
+     * @param graphicsDevice the screen
+     * @param frame the frame to operate on.
+     * @param fullscreen Should teh frame be displayed in fullscreen-mode or borderless fullscreen-mode.
+     */
     private static void showOnScreen(GraphicsDevice graphicsDevice, JFrame frame, boolean fullscreen) {
         if (fullscreen) {
             graphicsDevice.setFullScreenWindow(frame);
@@ -224,6 +300,11 @@ public class PechaKuchaMain {
         }
     }
 
+    /**
+     * Select a file via the {@link JFileChooser}
+     * @param parent the frame of the {@link JFileChooser}
+     * @return the File
+     */
     private File openDocument(JFrame parent) {
         int returnVal = chooser.showOpenDialog(parent);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -233,11 +314,18 @@ public class PechaKuchaMain {
         }
     }
 
+    /**
+     * Close this program
+     */
     private void exit() {
         arduinoConn.close();
         System.exit(0);
     }
 
+    /**
+     * Update the remaining seconds
+     * @param sec the seconds remaining as {@link String}
+     */
     private void updateSeconds(final String sec) {
 //        System.out.printf("%d, %d, %d\n", System.currentTimeMillis(), nextSecTime.get(), presStartTime.get());
 
@@ -249,7 +337,17 @@ public class PechaKuchaMain {
         threadPool.submit(() -> arduinoConn.send(sec));
     }
 
+    /**
+     * The main-method
+     * @param args a probably chosen file at position 0
+     */
     public static void main(String[] args) {
-        new PechaKuchaMain("pdftoppm-local");
+        SetupDTO settings = ScreenSetupFrame.getSettings();
+
+        if (args.length == 0) {
+            new PechaKuchaMain(settings);
+        } else {
+            new PechaKuchaMain(settings, args[0]);
+        }
     }
 }

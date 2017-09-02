@@ -13,11 +13,20 @@ import gnu.io.SerialPortEventListener;
 import java.util.Enumeration;
 
 
+/**
+ * This class can create the serial connection to an arduino for displaying the remaining seconds.
+ */
 public class ArduinoSerialConnection {
-    SerialPort serialPort;
     /**
      * The port we're normally going to use.
      */
+    private SerialPort serialPort;
+
+    /**
+     * if the should be activated
+     */
+    private boolean active;
+
     private static final String PORT_NAMES[] = {
             "/dev/tty.usbserial-A9007UX1", // Mac OS X
             "/dev/ttyACM0", // Raspberry Pi
@@ -38,10 +47,15 @@ public class ArduinoSerialConnection {
      */
     private static final int DATA_RATE = 9600;
 
-//    public ArduinoSerialConnection() {
-//    }
+    public ArduinoSerialConnection(boolean active) {
+        this.active = active;
+    }
 
     public void initialize() {
+        if (!active) {
+            return;
+        }
+
         // the next line is for Raspberry Pi and
         // gets us into the while loop and was suggested here was suggested http://www.raspberrypi.org/phpBB3/viewtopic.php?f=81&t=32186
         System.setProperty("gnu.io.rxtx.SerialPorts", "/dev/ttyACM0");
@@ -83,8 +97,12 @@ public class ArduinoSerialConnection {
         }
     }
 
+    /**
+     * Send a string to the Arduino
+     * @param content the String to send
+     */
     public synchronized void send(String content) {
-        if (serialPort == null) {
+        if (serialPort == null || !active) {
             return;
         }
 
@@ -99,11 +117,10 @@ public class ArduinoSerialConnection {
     }
 
     /**
-     * This should be called when you stop using the port.
-     * This will prevent port locking on platforms like Linux.
+     * Close the arduino-connection.
      */
     public synchronized void close() {
-        if (serialPort != null) {
+        if (serialPort != null && active) {
             serialPort.close();
         }
     }

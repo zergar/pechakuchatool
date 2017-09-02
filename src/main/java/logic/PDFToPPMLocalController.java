@@ -17,13 +17,29 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+/**
+ * A concrete implementation of a {@link PDFViewerController} using poppler-utils for PDF rendering.
+ */
 public class PDFToPPMLocalController implements PDFViewerController {
 
+    /**
+     * The originally converted and loaded images.
+     */
     private ArrayList<ImageIcon> originalImages;
+
+    /**
+     * A list containing the rendered images and panels currently in use.
+     */
     private ArrayList<PDFToPPMImageWrapper> imageWrapper;
 
+    /**
+     * The number of the currently displayed page.
+     */
     private int currImageNumber = 0;
 
+    /**
+     * The default constructor.
+     */
     PDFToPPMLocalController() {
         this.originalImages = new ArrayList<>();
         this.imageWrapper = new ArrayList<>();
@@ -54,7 +70,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
 
     @Override
     public void fitViewers() {
-
+        refreshImage();
     }
 
     @Override
@@ -142,16 +158,35 @@ public class PDFToPPMLocalController implements PDFViewerController {
         this.gotoFirst();
     }
 
+    /**
+     * Calls {@link PDFToPPMConverter#refreshImage()} on every wrapper.
+     */
     private void refreshImage() {
         imageWrapper.forEach(PDFToPPMImageWrapper::refreshImage);
     }
 
+    /**
+     * A wrapper containing pre-rendered images and panels for the different display-locations.
+     */
     private class PDFToPPMImageWrapper {
+        /**
+         * The to the correct size prerendered images for each wrapper.
+         */
         private ArrayList<ImageIcon> images;
 
+        /**
+         * The {@link JPanel} wrapping the displayed images.
+         */
         private JPanel imagePanel;
+
+        /**
+         * The {@link JLabel} containing the currently displayed image.
+         */
         private JLabel imageLabel;
 
+        /**
+         * The Constructor.
+         */
         PDFToPPMImageWrapper() {
             imageLabel = new JLabel();
             imageLabel.setBackground(Color.BLACK);
@@ -163,6 +198,9 @@ public class PDFToPPMLocalController implements PDFViewerController {
             images = new ArrayList<>();
         }
 
+        /**
+         * Re-renders the displayed versions of the images to the currently used size.
+         */
         private void prerenderImages() {
             System.out.println("rb " + System.currentTimeMillis());
 
@@ -198,21 +236,42 @@ public class PDFToPPMLocalController implements PDFViewerController {
             return imageLabel;
         }
 
+        /**
+         * Refreshes the currently used image on the imageLabel, usually used in conjunction with a page change.
+         */
         public void refreshImage() {
             imageLabel.setIcon(images.get(currImageNumber));
         }
     }
 
+    /**
+     * This class converts a page of a PDF-document to an image using {@link Callable}s for parallel execution.
+     */
     private class PDFToPPMConverter implements Callable<BufferedImage> {
 
+        /**
+         * The number of the page to be converted.
+         */
         private final int page;
 
+        /**
+         * The path of the document to be converted.
+         */
         private final String filePath;
 
+        /**
+         * A {@link CountDownLatch} managing the convert-process.
+         */
         private final CountDownLatch latch;
 
 //        private final ProgressWindow progress;
 
+        /**
+         * The Constructor.
+         * @param page The page-number.
+         * @param filePath The path to the PDF-document.
+         * @param latch The {@link CountDownLatch}.
+         */
         PDFToPPMConverter(int page, String filePath, CountDownLatch latch) {
             this.page = page;
             this.filePath = filePath;
