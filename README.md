@@ -45,6 +45,7 @@ After loading the file, a couple of things can be done:
 
 + Skipping through the slides by pressing `Up, Down, Left, Right, Page-Up, Page-Down`
 + Starting the Presentation by clicking `Presentation -> Start Presentation` or pressing `Space`
++ Resizing the Slides to the current display-sizes by clicking `View -> Fit Viewers` or pressing `F`.
 
 While the presentation is running, skipping through the slides is prohibited.
  

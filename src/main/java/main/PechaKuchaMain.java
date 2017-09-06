@@ -6,6 +6,10 @@ import logic.PDFViewerController;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.Defs;
+import org.jnativehook.GlobalScreen;
+import org.jnativehook.NativeHookException;
+import org.jnativehook.keyboard.NativeKeyEvent;
+import org.jnativehook.keyboard.NativeKeyListener;
 import viewComponents.ScreenSetupFrame;
 
 import javax.swing.*;
@@ -20,6 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
  * This is the main class of the PechaKuchaTool. It contains the startup-routines as well as the logic for building the frames.
@@ -51,17 +58,17 @@ public class PechaKuchaMain {
     private AtomicLong nextPageTime;
 
     /**
-     * The UNIX-Time of the next seconds-change on the timerRemainingLabel
+     * The UNIX-Time of the next seconds-change on the timerRemainingLabel.
      */
     private AtomicLong nextSecTime;
 
     /**
-     * The current displayed value on the timeRemainingLabel
+     * The current displayed value on the timeRemainingLabel.
      */
     private AtomicInteger timeRemaining;
 
     /**
-     * A thread-pool for asynchronous tasks
+     * A thread-pool for asynchronous tasks.
      */
     private ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -70,8 +77,25 @@ public class PechaKuchaMain {
      */
     private SetupDTO settings;
 
+    /**
+     * The {@link PDFViewerController}.
+     */
     private PDFViewerController pdfViewerController;
 
+    /**
+     * The timer for managing the slide change and remaining seconds-times.
+     */
+    private Timer t;
+
+    /**
+     * A Keyboard-Hook for controlling the program.
+     */
+    private NativeKeyListener nkl;
+
+    /**
+     * The Logger.
+     */
+    private Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
 
     /**
      * Default constructor for running the PechaKuchaTool.
@@ -93,7 +117,7 @@ public class PechaKuchaMain {
      * Constructor allowing to set an initial file which is then loaded after the program has been started successfully.
      *
      * @param settings The settings of the current launch.
-     * @param path The path of a to-load file.
+     * @param path     The path of a to-load file.
      */
     public PechaKuchaMain(SetupDTO settings, String path) {
         this.presStartTime = new AtomicLong(-1);
@@ -170,7 +194,7 @@ public class PechaKuchaMain {
 
         JMenuItem exit = new JMenuItem("Exit");
         exit.addActionListener(e -> exit());
-        exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, InputEvent.ALT_MASK));
+        exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_MASK));
         fileMenu.add(exit);
 
 
@@ -207,6 +231,8 @@ public class PechaKuchaMain {
         presFrame.setVisible(true);
         lookupFrame.setVisible(true);
 
+        lookupFrame.requestFocus();
+
 
         Font font = timeRemainingLabel.getFont();
         int screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
@@ -218,7 +244,7 @@ public class PechaKuchaMain {
 
         // timer
 
-        Timer t = new Timer(4, e -> {
+        t = new Timer(4, e -> {
             if (System.currentTimeMillis() >= nextPageTime.get()) {
                 pdfViewerController.nextPage();
                 nextPageTime.set(presStartTime.get() + ((pdfViewerController.getCurrentPageNumber() + 1) * 20_000L));
@@ -237,40 +263,77 @@ public class PechaKuchaMain {
 
 
         // keyboard
-        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        kfm.addKeyEventDispatcher((KeyEvent e) -> {
-            int kc = e.getKeyCode();
 
-            if (e.getID() == KeyEvent.KEY_PRESSED && pdfViewerController.isDocumentSelected()) {
-                if (kc == KeyEvent.VK_SPACE && !t.isRunning()) {
-                    pdfViewerController.gotoFirst();
+        nkl = new NativeKeyListener() {
+            @Override
+            public void nativeKeyTyped(NativeKeyEvent nativeKeyEvent) {
+                int kc = nativeKeyEvent.getKeyCode();
 
-                    long pStart = System.currentTimeMillis();
-                    presStartTime.set(pStart);
-                    nextPageTime.set(pStart + 20_000);
-                    nextSecTime.set(pStart + 1_000);
-
-                    t.start();
-
-                } else if (kc == KeyEvent.VK_R && t.isRunning()) {
-                    t.stop();
-                    pdfViewerController.gotoFirst();
-                    timeRemainingLabel.setText("20");
-                    arduinoConn.send("20");
-                    timeRemaining.set(20);
-                } else if ((kc == KeyEvent.VK_RIGHT || kc == KeyEvent.VK_DOWN || kc == KeyEvent.VK_PAGE_DOWN) && !t.isRunning()) {
-                    pdfViewerController.nextPage();
-                } else if ((kc == KeyEvent.VK_LEFT || kc == KeyEvent.VK_UP || kc == KeyEvent.VK_PAGE_UP) && !t.isRunning()) {
-                    pdfViewerController.prevPage();
+                if (pdfViewerController.isDocumentSelected() && (presFrame.isFocused() || lookupFrame.isFocused())) {
+                    if (kc == NativeKeyEvent.VC_SPACE && !t.isRunning()) {
+                        startPresentation();
+                    } else if (kc == NativeKeyEvent.VC_R && t.isRunning()) {
+                        resetPresentation();
+                    } else if ((kc == NativeKeyEvent.VC_RIGHT || kc == NativeKeyEvent.VC_DOWN || kc == NativeKeyEvent.VC_PAGE_DOWN) && !t.isRunning()) {
+                        pdfViewerController.nextPage();
+                    } else if ((kc == NativeKeyEvent.VC_LEFT || kc == NativeKeyEvent.VC_UP || kc == NativeKeyEvent.VC_PAGE_UP) && !t.isRunning()) {
+                        pdfViewerController.prevPage();
+                    } else if (kc == NativeKeyEvent.VC_F) {
+                        pdfViewerController.fitViewers();
+                    }
                 }
             }
 
-            return false;
-        });
+            @Override
+            public void nativeKeyPressed(NativeKeyEvent nativeKeyEvent) {
+                nativeKeyTyped(nativeKeyEvent);
+            }
+
+            @Override
+            public void nativeKeyReleased(NativeKeyEvent nativeKeyEvent) {
+
+            }
+        };
+
+
+        logger.setLevel(Level.WARNING);
+
+        try {
+            GlobalScreen.registerNativeHook();
+            GlobalScreen.addNativeKeyListener(nkl);
+        } catch (NativeHookException ex) {
+            System.err.println("There was a problem registering the native hook. Using default hooks with reduced functionality instead.");
+            System.err.println(ex.getMessage());
+
+            KeyEventDispatcher keyEventDispatcher = e -> {
+                int kc = e.getKeyCode();
+
+                if (e.getID() == KeyEvent.KEY_PRESSED && pdfViewerController.isDocumentSelected()) {
+                    if (kc == KeyEvent.VK_SPACE && !t.isRunning()) {
+                        startPresentation();
+                    } else if (kc == KeyEvent.VK_R && t.isRunning()) {
+                        resetPresentation();
+                    } else if ((kc == KeyEvent.VK_RIGHT || kc == KeyEvent.VK_DOWN || kc == KeyEvent.VK_PAGE_DOWN) && !t.isRunning()) {
+                        pdfViewerController.nextPage();
+                    } else if ((kc == KeyEvent.VK_LEFT || kc == KeyEvent.VK_UP || kc == KeyEvent.VK_PAGE_UP) && !t.isRunning()) {
+                        pdfViewerController.prevPage();
+                    } else if (kc == KeyEvent.VK_F) {
+                        pdfViewerController.fitViewers();
+                    }
+                }
+
+                return false;
+            };
+
+            KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+
+            kfm.addKeyEventDispatcher(keyEventDispatcher);
+        }
     }
 
     /**
      * Overlaoded setup-method which additionally loads a file right at the end.
+     *
      * @param path The path to the file to load.
      */
     private void setup(String path) {
@@ -286,9 +349,10 @@ public class PechaKuchaMain {
 
     /**
      * Sets the screen on which a frame should be shown.
+     *
      * @param graphicsDevice the screen
-     * @param frame the frame to operate on.
-     * @param fullscreen Should teh frame be displayed in fullscreen-mode or borderless fullscreen-mode.
+     * @param frame          the frame to operate on.
+     * @param fullscreen     Should teh frame be displayed in fullscreen-mode or borderless fullscreen-mode.
      */
     private static void showOnScreen(GraphicsDevice graphicsDevice, JFrame frame, boolean fullscreen) {
         if (fullscreen) {
@@ -301,7 +365,33 @@ public class PechaKuchaMain {
     }
 
     /**
+     * Start a presentation.
+     */
+    private void startPresentation() {
+        pdfViewerController.gotoFirst();
+
+        long pStart = System.currentTimeMillis();
+        presStartTime.set(pStart);
+        nextPageTime.set(pStart + 20_000);
+        nextSecTime.set(pStart + 1_000);
+
+        t.start();
+    }
+
+    /**
+     * Reset the presentation.
+     */
+    private void resetPresentation() {
+        t.stop();
+        pdfViewerController.gotoFirst();
+        timeRemainingLabel.setText("20");
+        arduinoConn.send("20");
+        timeRemaining.set(20);
+    }
+
+    /**
      * Select a file via the {@link JFileChooser}
+     *
      * @param parent the frame of the {@link JFileChooser}
      * @return the File
      */
@@ -319,11 +409,17 @@ public class PechaKuchaMain {
      */
     private void exit() {
         arduinoConn.close();
+        try {
+            GlobalScreen.unregisterNativeHook();
+        } catch (NativeHookException e) {
+            e.printStackTrace();
+        }
         System.exit(0);
     }
 
     /**
      * Update the remaining seconds
+     *
      * @param sec the seconds remaining as {@link String}
      */
     private void updateSeconds(final String sec) {
@@ -339,6 +435,7 @@ public class PechaKuchaMain {
 
     /**
      * The main-method
+     *
      * @param args a probably chosen file at position 0
      */
     public static void main(String[] args) {

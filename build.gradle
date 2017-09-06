@@ -1,5 +1,5 @@
 group 'org.tuberlin.fak4'
-version '0.9.0'
+version '0.9.1'
 
 apply plugin: 'java'
 apply plugin: 'application'
@@ -32,7 +32,6 @@ task fatJar(type: Jar) {
 repositories {
     maven { url 'http://download.osgeo.org/webdav/geotools/' }
     mavenCentral()
-    jcenter()
 }
 
 dependencies {
@@ -43,6 +42,7 @@ dependencies {
     compile "org.icepdf.os:icepdf-viewer:6.2.2"
     compile 'com.levigo.jbig2:levigo-jbig2-imageio:2.0'
 
+    compile group: 'com.1stleg', name: 'jnativehook', version: '2.1.0'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
 
