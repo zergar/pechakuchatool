@@ -75,7 +75,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
 
     @Override
     public void nextPage() {
-        if (currImageNumber < originalImages.size() - 1){
+        if (currImageNumber < originalImages.size() - 1) {
             currImageNumber++;
 
             refreshImage();
@@ -84,7 +84,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
 
     @Override
     public void prevPage() {
-        if (currImageNumber > 0){
+        if (currImageNumber > 0) {
             currImageNumber--;
 
             refreshImage();
@@ -106,7 +106,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
 
     @Override
     public void loadNewFile(String filePath) throws IOException, PDFException, PDFSecurityException, InterruptedException, ExecutionException {
-        ProcessBuilder numberOfPagesBuilder = new ProcessBuilder("pdftk", filePath, "dump_data");
+        ProcessBuilder numberOfPagesBuilder = new ProcessBuilder("pdfinfo", filePath);
         numberOfPagesBuilder.redirectErrorStream(true);
         Process numberOfPagesProcess = numberOfPagesBuilder.start();
         numberOfPagesProcess.waitFor();
@@ -116,8 +116,9 @@ public class PDFToPPMLocalController implements PDFViewerController {
         String line;
 
         while ((line = br.readLine()) != null) {
-            if (line.contains("NumberOfPages")) {
-                nopString = line.split(" ")[1];
+            if (line.contains("Pages:")) {
+                String[] split = line.split(" ");
+                nopString = split[split.length - 1];
                 break;
             }
         }
@@ -268,9 +269,10 @@ public class PDFToPPMLocalController implements PDFViewerController {
 
         /**
          * The Constructor.
-         * @param page The page-number.
+         *
+         * @param page     The page-number.
          * @param filePath The path to the PDF-document.
-         * @param latch The {@link CountDownLatch}.
+         * @param latch    The {@link CountDownLatch}.
          */
         PDFToPPMConverter(int page, String filePath, CountDownLatch latch) {
             this.page = page;
