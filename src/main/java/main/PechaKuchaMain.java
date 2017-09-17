@@ -2,6 +2,7 @@ package main;
 
 import arduino.ArduinoSerialConnection;
 import dto.SetupDTO;
+import logic.NoGraphicsDevice;
 import logic.PDFViewerController;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
@@ -46,6 +47,16 @@ public class PechaKuchaMain {
      * The {@link JLabel} which contains the remaining seconds.
      */
     private JLabel timeRemainingLabel;
+
+    /**
+     * The {@link JFrame} which contains the Presentation Screen-Components.
+     */
+    private JFrame presFrame;
+
+    /**
+     * The {@link JFrame} which contains the Lookup Screen-Components.
+     */
+    private JFrame lookupFrame;
 
     /**
      * The {@link System#currentTimeMillis()} of the presentations' start.
@@ -152,17 +163,19 @@ public class PechaKuchaMain {
 
 
         // presentation-frame
-        JFrame presFrame = new JFrame("PechaKucha Presentation-Window");
+        presFrame = new JFrame("PechaKucha Presentation-Window");
         presFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         presFrame.getContentPane().add(pdfViewerController.getDocContainer(0));
 
-
-        presFrame.pack();
-        showOnScreen(settings.getPresentationScreen(), presFrame, true);
+        if (!(settings.getPresentationScreen() instanceof NoGraphicsDevice)) {
+            presFrame.pack();
+            showOnScreen(settings.getPresentationScreen(), presFrame, true);
+            presFrame.setVisible(true);
+        }
 
 
         // lookup-frame
-        JFrame lookupFrame = new JFrame("PechaKucha Presentation-Tool");
+        lookupFrame = new JFrame("PechaKucha Presentation-Tool");
         Container lookupPane = lookupFrame.getContentPane();
         lookupPane.setLayout(new BoxLayout(lookupPane, BoxLayout.X_AXIS));
 
@@ -228,7 +241,6 @@ public class PechaKuchaMain {
         lookupFrame.pack();
         showOnScreen(settings.getLookupScreen(), lookupFrame, false);
 
-        presFrame.setVisible(true);
         lookupFrame.setVisible(true);
 
         lookupFrame.requestFocus();
@@ -269,7 +281,7 @@ public class PechaKuchaMain {
             public void nativeKeyTyped(NativeKeyEvent nativeKeyEvent) {
                 int kc = nativeKeyEvent.getKeyCode();
 
-                if (pdfViewerController.isDocumentSelected() && (presFrame.isFocused() || lookupFrame.isFocused())) {
+                if (pdfViewerController.isDocumentSelected() && isFocussedApplication()) {
                     if (kc == NativeKeyEvent.VC_SPACE && !t.isRunning()) {
                         startPresentation();
                     } else if (kc == NativeKeyEvent.VC_R && t.isRunning()) {
@@ -431,6 +443,16 @@ public class PechaKuchaMain {
         });
 
         threadPool.submit(() -> arduinoConn.send(sec));
+    }
+
+    private boolean isFocussedApplication() {
+        boolean presFrameFocus = false;
+
+        if (!(settings.getPresentationScreen() instanceof NoGraphicsDevice)) {
+            presFrameFocus = presFrame.isFocused();
+        }
+
+        return lookupFrame.isFocused() || presFrameFocus;
     }
 
     /**

@@ -1,10 +1,13 @@
 package viewComponents;
 
 import dto.SetupDTO;
+import logic.NoGraphicsDevice;
 
 import javax.swing.*;
 import javax.swing.event.ListDataListener;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.ColorModel;
 import java.util.ArrayList;
 
 public class ScreenSetupFrame extends JDialog {
@@ -55,6 +58,8 @@ public class ScreenSetupFrame extends JDialog {
         ScreenSetupFrame screenSetupFrame = new ScreenSetupFrame();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gs = ge.getScreenDevices();
+
+        screenSetupFrame.presScreenChooser.addItem(new NoGraphicsDevice());
 
 
         for (GraphicsDevice g : gs) {

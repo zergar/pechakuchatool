@@ -211,6 +211,10 @@ public class PDFToPPMLocalController implements PDFViewerController {
                 Dimension panelDim = imageLabel.getParent().getSize();
                 Dimension imageDim = new Dimension(i.getWidth(null), i.getHeight(null));
 
+                if (panelDim.width <= 0 || panelDim.height <= 0) {
+                    return imageIcon;
+                }
+
 
                 double panelRatio = panelDim.getHeight() / panelDim.getWidth();
                 double imageRatio = imageDim.getHeight() / imageDim.getWidth();
