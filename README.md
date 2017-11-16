@@ -16,9 +16,9 @@ Write down, where rxtx has been installed.
 
 ### Starting the program
 
-Start the program by calling `java -jar pechakuchatool-0.9-all.jar`.
+Start the program by calling `java -jar pechakuchatool-§version§-all.jar`, where `§version§` is your current version of this program.
 A setup-screen should appear.
-If you want to also use an Arduino, run `java -Djava.library.path=§rxtx-location§:§jni-location§ -jar pechakuchatool-0.9-all.jar`, where `§rxtx-location§` is the location of your rxtx-lib and `§jni-location§` is the location of your jni.
+If you want to also use an Arduino, run `java -Djava.library.path=§rxtx-location§:§jni-location§ -jar pechakuchatool-§version§-all.jar`, where `§rxtx-location§` is the location of your rxtx-lib and `§jni-location§` is the location of your jni.
 The latter one is `/usr/lib/jni` by default when using ubuntu.
 
 If you mark the jar as executable, you might be able to run it from your desktop right away.
@@ -89,4 +89,4 @@ For building the jar type `./gradlew fatJar` on UNIX-based systems or `gradlew.b
 Feel free to write an issue or set a pull request if you encounter any problems.
 
 
-Gereon Dusella for ISE @ TU Berlin
+Gereon Dusella for ISE @ TU Berlin, Licensed under GNU GPLv3

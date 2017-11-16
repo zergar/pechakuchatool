@@ -14,12 +14,14 @@ import org.jnativehook.keyboard.NativeKeyListener;
 import viewComponents.ScreenSetupFrame;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +30,23 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/*
+    PechaKuchaTool -- Supports displaying Pecha Kucha-Presentations
+    Copyright (C) 2017  Gereon Dusella
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * This is the main class of the PechaKuchaTool. It contains the startup-routines as well as the logic for building the frames.
@@ -229,6 +248,13 @@ public class PechaKuchaMain {
         fitPage.setMnemonic(KeyEvent.VK_F);
         fitPage.addActionListener(e -> pdfViewerController.fitViewers());
         viewMenu.add(fitPage);
+
+        JMenu helpMenu = new JMenu("Help");
+        menuBar.add(helpMenu);
+
+        JMenuItem about = new JMenuItem("About");
+        about.addActionListener(e -> showAboutText());
+        helpMenu.add(about);
 
 
         lookupFrame.setJMenuBar(menuBar);
@@ -468,5 +494,43 @@ public class PechaKuchaMain {
         } else {
             new PechaKuchaMain(settings, args[0]);
         }
+    }
+
+    /**
+     * Displays an "About"-text
+     */
+    private void showAboutText() {
+        StringBuilder msg = new StringBuilder();
+        msg.append("<html>")
+                .append("<h1>PechaKuchaTool</h1><h2>Supports displaying Pecha Kucha-Presentations</h2>")
+                .append("<h3>Copyright (C) 2017  Gereon Dusella</h3>")
+                .append("<p>This program is free software: you can redistribute it and/or modify<br>")
+                .append("it under the terms of the GNU General Public License as published by<br>")
+                .append("the Free Software Foundation, either version 3 of the License, or<br>")
+                .append("(at your option) any later version.</p>")
+                .append("<p>This program is distributed in the hope that it will be useful,<br>")
+                .append("but WITHOUT ANY WARRANTY; without even the implied warranty of<br>")
+                .append("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the<br>")
+                .append("GNU General Public License for more details.</p>")
+                .append("You should have received a copy of the GNU General Public License<br>")
+                .append("along with this program. If not, see <a href=\"http://www.gnu.org/licenses/\">http://www.gnu.org/licenses/</a>.")
+                .append("</html>");
+
+        JEditorPane aboutPane = new JEditorPane("text/html", msg.toString());
+
+        aboutPane.addHyperlinkListener(e -> {
+            if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED) && Desktop.isDesktopSupported()) {
+                try {
+                    Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (URISyntaxException | IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        aboutPane.setEditable(false);
+
+        JOptionPane.showMessageDialog(lookupFrame, aboutPane,
+                "About PechaKuchaTool", JOptionPane.PLAIN_MESSAGE);
     }
 }
