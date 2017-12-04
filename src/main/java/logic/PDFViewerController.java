@@ -5,6 +5,7 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import viewComponents.ScreenSetupFrame;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
@@ -58,6 +59,15 @@ public interface PDFViewerController {
 
         pdfvc.createNewControllers(amount);
         return pdfvc;
+    }
+
+    /**
+     * Evaluates whether a specific renderer supports loading pre-rendered presentations.
+     * @param pdfvc the PDF-renderer-controller
+     * @return The support-state
+     */
+    static boolean isLoadRenderedSupported(PDFViewerController pdfvc) {
+        return pdfvc instanceof PDFToPPMLocalController;
     }
 
     /**
@@ -121,4 +131,13 @@ public interface PDFViewerController {
      * @throws ExecutionException
      */
     void loadNewFile(String filePath) throws IOException, PDFException, PDFSecurityException, InterruptedException, ExecutionException;
+
+    /**
+     * Writes the currently loaded Presentation to a location within the filesystem.
+     * @param file the path to be written to
+     * @throws IOException
+     */
+    boolean savePresentationToFile(File file) throws IOException;
+
+    void loadPresentationFromFile(File file) throws IOException, ClassNotFoundException;
 }

@@ -10,6 +10,7 @@ import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -133,5 +134,14 @@ public class IcePDFController implements PDFViewerController {
         controllers.forEach(c -> c.openDocument(pdf, "PechaKuchaPDF"));
 
         fitViewers();
+    }
+
+    @Override
+    public boolean savePresentationToFile(File file) throws IOException {
+        return false;
+    }
+
+    @Override
+    public void loadPresentationFromFile(File file) throws IOException, ClassNotFoundException {
     }
 }

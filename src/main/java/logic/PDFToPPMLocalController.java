@@ -9,13 +9,13 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /*
     PechaKuchaTool -- Supports displaying Pecha Kucha-Presentations
@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
  * A concrete implementation of a {@link PDFViewerController} using poppler-utils for PDF rendering.
  */
 public class PDFToPPMLocalController implements PDFViewerController {
+
+    private static final Logger LOG = Logger.getLogger(PDFToPPMLocalController.class.getName());
 
     /**
      * The originally converted and loaded images.
@@ -149,7 +151,8 @@ public class PDFToPPMLocalController implements PDFViewerController {
         CountDownLatch latch = new CountDownLatch(nop);
         ExecutorService pool = Executors.newCachedThreadPool();
 
-        System.out.println("start " + System.currentTimeMillis());
+
+        LOG.info("Begin rendering images: " + System.currentTimeMillis());
 
 //        ProgressWindow progress = new ProgressWindow(nop);
 
@@ -168,13 +171,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
             originalImages.add(new ImageIcon(img.get()));
         }
 
-        imageWrapper.forEach(PDFToPPMImageWrapper::prerenderImages);
-
-        imageWrapper.forEach(w -> w.getImagePanel().getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)));
-//        progress.close();
-
-
-        this.gotoFirst();
+        initScaling();
     }
 
     /**
@@ -183,6 +180,59 @@ public class PDFToPPMLocalController implements PDFViewerController {
     private void refreshImage() {
         imageWrapper.forEach(PDFToPPMImageWrapper::refreshImage);
     }
+
+    @Override
+    public boolean savePresentationToFile(File file) throws IOException {
+        FileOutputStream fos = new FileOutputStream(file);
+        GZIPOutputStream gos = new GZIPOutputStream(fos);
+        ObjectOutputStream oos = new ObjectOutputStream(gos);
+
+        LOG.info("Starting saving pre-rendered file: " + System.currentTimeMillis());
+
+        oos.writeObject(originalImages);
+
+        LOG.info("Finished saving pre-rendered file: " + System.currentTimeMillis());
+
+        oos.close();
+        gos.close();
+        fos.close();
+
+        LOG.info("Finished writing currently loaded Presentation to " + file.getAbsolutePath());
+        return true;
+    }
+
+    @Override
+    public void loadPresentationFromFile(File file) throws IOException, ClassNotFoundException {
+        FileInputStream fis = new FileInputStream(file);
+        GZIPInputStream gis = new GZIPInputStream(fis);
+        ObjectInputStream ois = new ObjectInputStream(gis);
+
+        LOG.info("Starting loading pre-rendered file: " + System.currentTimeMillis());
+
+        this.originalImages = (ArrayList<ImageIcon>) ois.readObject();
+
+        LOG.info("Finished loading pre-rendered file: " + System.currentTimeMillis());
+
+        ois.close();
+        gis.close();
+        fis.close();
+
+        initScaling();
+    }
+
+    /**
+     * Wrapper for starting the image-scaling-process
+     */
+    private void initScaling() {
+        imageWrapper.forEach(PDFToPPMImageWrapper::prescaleImages);
+
+        imageWrapper.forEach(w -> w.getImagePanel().getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)));
+//        progress.close();
+
+
+        this.gotoFirst();
+    }
+
 
     /**
      * A wrapper containing pre-rendered images and panels for the different display-locations.
@@ -220,8 +270,8 @@ public class PDFToPPMLocalController implements PDFViewerController {
         /**
          * Re-renders the displayed versions of the images to the currently used size.
          */
-        private void prerenderImages() {
-            System.out.println("rb " + System.currentTimeMillis());
+        private void prescaleImages() {
+            LOG.info("Begin scaling Images: " + System.currentTimeMillis());
 
             images = originalImages.parallelStream().map(imageIcon -> {
                 Image i = imageIcon.getImage();
@@ -248,7 +298,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
                 return new ImageIcon(imageScaled);
             }).collect(Collectors.toCollection(ArrayList::new));
 
-            System.out.println("re " + System.currentTimeMillis());
+            LOG.info("Finished scaling Images: " + System.currentTimeMillis());
         }
 
         public JPanel getImagePanel() {
@@ -326,7 +376,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
                 e.printStackTrace();
             }
 
-            System.out.println(page + " " + System.currentTimeMillis());
+            LOG.info(   page + " " + System.currentTimeMillis());
 //            progress.increaseProgress();
 
             return image;

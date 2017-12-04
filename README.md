@@ -54,6 +54,12 @@ This will also bring you to the first slide of your presentation.
 
 To close the program, press `File -> Exit`.
 
+#### Changes in version v1.1.0
+
+when using the "PDFToPPM-Local"-renderer it is now possible to save and load the pre-rendered presentations thus speeding up the process of switching slide-sets. The file-ending `*.pktool` should be used when working with pre-rendered presentations.
+
+Also, batch-pre-rendering TODO
+
 ### Using an Arduino
 
 To use an Arduino, first the Arduino-sketch has to be loaded to the arduino itself.
@@ -62,7 +68,7 @@ Note, that the pin used to connect to your shield might differ depending on your
 When connected to power, the shield should display `00` on its LED-matrix.
 Also don't forget to load the rxtx-library as mentioned above.
 
-**Please don't depend on the time shown on the Arduino as it is currently quite buggy.** 
+**Please, do not depend on the time shown on the Arduino as it is currently quite buggy.** 
 The connection might crash during your presentation, leading the arduino to show the last time before the crash happened.
 Also at the moment, the connection can only be reestablished by restarting the program.
 
