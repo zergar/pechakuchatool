@@ -54,11 +54,17 @@ This will also bring you to the first slide of your presentation.
 
 To close the program, press `File -> Exit`.
 
-#### Changes in version v1.1.0
+#### New Features in version v1.1.0
 
-when using the "PDFToPPM-Local"-renderer it is now possible to save and load the pre-rendered presentations thus speeding up the process of switching slide-sets. The file-ending `*.pktool` should be used when working with pre-rendered presentations.
+A presentation can now be started from the current slide. You can do this by clicking `Presentation -> Start Presentation from current Slide` or pressing `Alt + C`.
 
-Also, batch-pre-rendering TODO
+When using the "PDFToPPM-Local"-renderer it is now possible to save and load the pre-rendered presentations thus speeding up the process of switching slide-sets. The file-ending `*.pktool` should be used when working with pre-rendered presentations. 
+Save a presentation by clicking `File -> Save pre-rendered Presentation` or pressing `Ctrl + S`.
+a presentation by clicking `File -> Open pre-rendered Presentation` or pressing `Alt + O`.
+
+Also, it is now possible to pre-render every PDF-file within a folder for faster loading when using the *PopplerUtils*-renderer.
+To start a prerender use `java -jar pechakuchatool-§version§-all.jar -prerender <pathToFolder>`.
+The *.pktool*-files are always saved in the same folder of the input-PDFs.
 
 ### Using an Arduino
 

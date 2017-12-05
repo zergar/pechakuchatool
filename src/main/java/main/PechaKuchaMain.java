@@ -4,6 +4,7 @@ import arduino.ArduinoSerialConnection;
 import dto.SetupDTO;
 import logic.NoGraphicsDevice;
 import logic.PDFViewerController;
+import logic.Saveable;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.Defs;
@@ -210,90 +211,8 @@ public class PechaKuchaMain {
         timePanel.setBackground(Color.BLACK);
         timePanel.add(timeRemainingLabel);
 
-        JMenuBar menuBar = new JMenuBar();
 
-        JMenu fileMenu = new JMenu("Files");
-        menuBar.add(fileMenu);
-
-        JMenuItem openFile = new JMenuItem("Open File");
-        openFile.addActionListener(e -> {
-            try {
-                pdfViewerController.loadNewFile(openDocument(lookupFrame).getAbsolutePath());
-            } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException err) {
-                err.printStackTrace();
-            }
-        });
-        openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
-        fileMenu.add(openFile);
-
-        fileMenu.addSeparator();
-
-        if (PDFViewerController.isLoadRenderedSupported(pdfViewerController)) {
-            JMenuItem openPreRenderedFile = new JMenuItem("Open pre-rendered Presentation");
-            openPreRenderedFile.addActionListener(e -> {
-                try {
-                    loadRenderedPresentation(lookupFrame);
-                } catch (IOException | ClassNotFoundException err) {
-                    err.printStackTrace();
-                }
-            });
-            openPreRenderedFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.ALT_MASK));
-            fileMenu.add(openPreRenderedFile);
-
-            JMenuItem savePreRenderedFile = new JMenuItem("Save pre-rendered Presentation");
-            savePreRenderedFile.addActionListener(e -> {
-                try {
-                    saveRenderedPresentation(lookupFrame);
-                } catch (IOException err) {
-                    err.printStackTrace();
-                }
-            });
-            savePreRenderedFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
-            fileMenu.add(savePreRenderedFile);
-
-            fileMenu.addSeparator();
-        }
-
-        JMenuItem exit = new JMenuItem("Exit");
-        exit.addActionListener(e -> exit());
-        exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_MASK));
-        fileMenu.add(exit);
-
-
-        JMenu presMenu = new JMenu("Presentation");
-        menuBar.add(presMenu);
-
-        JMenuItem startPres = new JMenuItem("Start Presentation");
-        startPres.addActionListener(e -> startPresentation(true));
-        startPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
-        presMenu.add(startPres);
-
-        JMenuItem startFromCurrSlide = new JMenuItem("Start Presentation from current slide");
-        startFromCurrSlide.addActionListener(e -> startPresentation(false));
-        startFromCurrSlide.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.ALT_MASK));
-        presMenu.add(startFromCurrSlide);
-
-        JMenuItem resetPres = new JMenuItem("Reset Presentation");
-        resetPres.addActionListener(e -> resetPresentation());
-        resetPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
-        presMenu.add(resetPres);
-
-        JMenu viewMenu = new JMenu("View");
-        menuBar.add(viewMenu);
-
-        JMenuItem fitPage = new JMenuItem("Fit Page");
-        fitPage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0));
-        fitPage.addActionListener(e -> pdfViewerController.fitViewers());
-        viewMenu.add(fitPage);
-
-        JMenu helpMenu = new JMenu("Help");
-        menuBar.add(helpMenu);
-
-        JMenuItem about = new JMenuItem("About");
-        about.addActionListener(e -> showAboutText());
-        helpMenu.add(about);
-
-
+        JMenuBar menuBar = createLookupMenuBar();
         lookupFrame.setJMenuBar(menuBar);
 
 
@@ -310,7 +229,7 @@ public class PechaKuchaMain {
 
 
         Font font = timeRemainingLabel.getFont();
-        int screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+        int screenWidth = settings.getLookupScreen().getDisplayMode().getWidth();
         double fontSize = font.getSize() * ((double) screenWidth * 0.2 / (double) timeRemainingLabel.getFontMetrics(font).stringWidth("00"));
         timeRemainingLabel.setFont(timeRemainingLabel.getFont().deriveFont(Font.BOLD).deriveFont((float) fontSize));
 
@@ -402,6 +321,92 @@ public class PechaKuchaMain {
 
             kfm.addKeyEventDispatcher(keyEventDispatcher);
         }
+    }
+
+    private JMenuBar createLookupMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu fileMenu = new JMenu("Files");
+        menuBar.add(fileMenu);
+
+        JMenuItem openFile = new JMenuItem("Open File");
+        openFile.addActionListener(e -> {
+            try {
+                pdfViewerController.loadNewFile(openDocument(lookupFrame).getAbsolutePath());
+            } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException err) {
+                err.printStackTrace();
+            }
+        });
+        openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
+        fileMenu.add(openFile);
+
+        fileMenu.addSeparator();
+
+        if (pdfViewerController instanceof Saveable) {
+            JMenuItem openPreRenderedFile = new JMenuItem("Open pre-rendered Presentation");
+            openPreRenderedFile.addActionListener(e -> {
+                try {
+                    loadRenderedPresentation(lookupFrame);
+                } catch (IOException | ClassNotFoundException err) {
+                    err.printStackTrace();
+                }
+            });
+            openPreRenderedFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.ALT_MASK));
+            fileMenu.add(openPreRenderedFile);
+
+            JMenuItem savePreRenderedFile = new JMenuItem("Save pre-rendered Presentation");
+            savePreRenderedFile.addActionListener(e -> {
+                try {
+                    saveRenderedPresentation(lookupFrame);
+                } catch (IOException err) {
+                    err.printStackTrace();
+                }
+            });
+            savePreRenderedFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
+            fileMenu.add(savePreRenderedFile);
+
+            fileMenu.addSeparator();
+        }
+
+        JMenuItem exit = new JMenuItem("Exit");
+        exit.addActionListener(e -> exit());
+        exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_MASK));
+        fileMenu.add(exit);
+
+
+        JMenu presMenu = new JMenu("Presentation");
+        menuBar.add(presMenu);
+
+        JMenuItem startPres = new JMenuItem("Start Presentation");
+        startPres.addActionListener(e -> startPresentation(true));
+        startPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
+        presMenu.add(startPres);
+
+        JMenuItem startFromCurrSlide = new JMenuItem("Start Presentation from current Slide");
+        startFromCurrSlide.addActionListener(e -> startPresentation(false));
+        startFromCurrSlide.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.ALT_MASK));
+        presMenu.add(startFromCurrSlide);
+
+        JMenuItem resetPres = new JMenuItem("Reset Presentation");
+        resetPres.addActionListener(e -> resetPresentation());
+        resetPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
+        presMenu.add(resetPres);
+
+        JMenu viewMenu = new JMenu("View");
+        menuBar.add(viewMenu);
+
+        JMenuItem fitPage = new JMenuItem("Fit Page");
+        fitPage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0));
+        fitPage.addActionListener(e -> pdfViewerController.fitViewers());
+        viewMenu.add(fitPage);
+
+        JMenu helpMenu = new JMenu("Help");
+        menuBar.add(helpMenu);
+
+        JMenuItem about = new JMenuItem("About");
+        about.addActionListener(e -> showAboutText());
+        helpMenu.add(about);
+        return menuBar;
     }
 
     /**
@@ -525,49 +530,53 @@ public class PechaKuchaMain {
 
     /**
      * Method which can save a loaded presentation.
+     *
      * @param parent the parent of the JFileChooser
      * @throws IOException
      */
     private void saveRenderedPresentation(JFrame parent) throws IOException {
-        if (!PDFViewerController.isLoadRenderedSupported(pdfViewerController)) {
+        if (pdfViewerController instanceof Saveable) {
+
+            String fileName;
+            if (newPresChooser.getSelectedFile() == null) {
+                fileName = "RenderedPresentation";
+            } else {
+                fileName = newPresChooser.getSelectedFile().getName();
+            }
+
+            renderedPresChooser.setSelectedFile(new File(fileName + ".pktool"));
+            int returnVal = renderedPresChooser.showSaveDialog(parent);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                pdfViewerController.savePresentationToFile(renderedPresChooser.getSelectedFile());
+            } else {
+                JOptionPane.showMessageDialog(parent, "An error occured while saving the current presentation.",
+                        "Error while saving", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
             JOptionPane.showMessageDialog(parent, "This renderer does not support this feature.",
                     "Unsupported Feature", JOptionPane.INFORMATION_MESSAGE);
-        }
-
-        String fileName;
-        if (newPresChooser.getSelectedFile() == null) {
-            fileName = "RenderedPresentation";
-        } else {
-            fileName = newPresChooser.getSelectedFile().getName();
-        }
-
-        renderedPresChooser.setSelectedFile(new File(fileName + ".pktool"));
-        int returnVal = renderedPresChooser.showSaveDialog(parent);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            pdfViewerController.savePresentationToFile(renderedPresChooser.getSelectedFile());
-        } else {
-            JOptionPane.showMessageDialog(parent, "An error occured while saving the current presentation.",
-                    "Error while saving", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     /**
      * Method which can load a saved pre-rendered presentation.
+     *
      * @param parent the parent of the JFileChooser
      * @throws IOException
      */
     private void loadRenderedPresentation(JFrame parent) throws IOException, ClassNotFoundException {
-        if (!PDFViewerController.isLoadRenderedSupported(pdfViewerController)) {
+        if (pdfViewerController instanceof Saveable) {
+
+            int returnVal = renderedPresChooser.showOpenDialog(parent);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                pdfViewerController.loadPresentationFromFile(renderedPresChooser.getSelectedFile());
+            } else {
+                JOptionPane.showMessageDialog(parent, "An error occured while loading the given pre-rendered file.",
+                        "Error while loading", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
             JOptionPane.showMessageDialog(parent, "This renderer does not support this feature.",
                     "Unsupported Feature", JOptionPane.INFORMATION_MESSAGE);
-        }
-
-        int returnVal = renderedPresChooser.showOpenDialog(parent);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            pdfViewerController.loadPresentationFromFile(renderedPresChooser.getSelectedFile());
-        } else {
-            JOptionPane.showMessageDialog(parent, "An error occured while loading the given pre-rendered file.",
-                    "Error while loading", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -607,20 +616,5 @@ public class PechaKuchaMain {
 
         JOptionPane.showMessageDialog(lookupFrame, aboutPane,
                 "About PechaKuchaTool", JOptionPane.PLAIN_MESSAGE);
-    }
-
-    /**
-     * The main-method
-     *
-     * @param args a probably chosen file at position 0
-     */
-    public static void main(String[] args) {
-        SetupDTO settings = ScreenSetupFrame.getSettings();
-
-        if (args.length == 0) {
-            new PechaKuchaMain(settings);
-        } else {
-            new PechaKuchaMain(settings, args[0]);
-        }
     }
 }

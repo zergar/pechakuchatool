@@ -1,5 +1,6 @@
 package logic;
 
+import logic.pdftoppm.PDFToPPMConverter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.icepdf.core.exceptions.PDFException;
@@ -38,7 +39,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * A concrete implementation of a {@link PDFViewerController} using poppler-utils for PDF rendering.
  */
-public class PDFToPPMLocalController implements PDFViewerController {
+public class PDFToPPMLocalController implements PDFViewerController, Saveable {
 
     private static final Logger LOG = Logger.getLogger(PDFToPPMLocalController.class.getName());
 
@@ -50,7 +51,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
     /**
      * A list containing the rendered images and panels currently in use.
      */
-    private ArrayList<PDFToPPMImageWrapper> imageWrapper;
+    private ArrayList<PDFPrerenderedImageWrapper> imageWrapper;
 
     /**
      * The number of the currently displayed page.
@@ -60,7 +61,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
     /**
      * The default constructor.
      */
-    PDFToPPMLocalController() {
+    public PDFToPPMLocalController() {
         this.originalImages = new ArrayList<>();
         this.imageWrapper = new ArrayList<>();
     }
@@ -68,7 +69,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
 
     @Override
     public void createNewController() {
-        imageWrapper.add(new PDFToPPMImageWrapper());
+        imageWrapper.add(new PDFPrerenderedImageWrapper());
     }
 
     @Override
@@ -123,9 +124,22 @@ public class PDFToPPMLocalController implements PDFViewerController {
         refreshImage();
     }
 
-
     @Override
     public void loadNewFile(String filePath) throws IOException, PDFException, PDFSecurityException, InterruptedException, ExecutionException {
+        loadNewFile(filePath, false);
+    }
+
+    /**
+     * Superfunction used by {@link PDFToPPMLocalController#loadNewFile(String)}, additional Parameter to prevent scaling after conversion.
+     * @param filePath the File-path
+     * @param scaleAfter whether the conversion should trigger the scaling-routine.
+     * @throws IOException
+     * @throws PDFException
+     * @throws PDFSecurityException
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    public void loadNewFile(String filePath, boolean scaleAfter) throws IOException, PDFException, PDFSecurityException, InterruptedException, ExecutionException {
         ProcessBuilder numberOfPagesBuilder = new ProcessBuilder("pdfinfo", filePath);
         numberOfPagesBuilder.redirectErrorStream(true);
         Process numberOfPagesProcess = numberOfPagesBuilder.start();
@@ -152,7 +166,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
         ExecutorService pool = Executors.newCachedThreadPool();
 
 
-        LOG.info("Begin rendering images: " + System.currentTimeMillis());
+        LOG.info("Begin rendering images of file " + filePath);
 
 //        ProgressWindow progress = new ProgressWindow(nop);
 
@@ -171,14 +185,30 @@ public class PDFToPPMLocalController implements PDFViewerController {
             originalImages.add(new ImageIcon(img.get()));
         }
 
-        initScaling();
+
+        if (scaleAfter) {
+            initScaling();
+        }
     }
 
     /**
-     * Calls {@link PDFToPPMConverter#refreshImage()} on every wrapper.
+     * Calls {@link PDFPrerenderedImageWrapper#refreshImage()} on every wrapper.
      */
     private void refreshImage() {
-        imageWrapper.forEach(PDFToPPMImageWrapper::refreshImage);
+        imageWrapper.forEach(PDFPrerenderedImageWrapper::refreshImage);
+    }
+
+    /**
+     * Wrapper for starting the image-scaling-process
+     */
+    private void initScaling() {
+        imageWrapper.forEach(PDFPrerenderedImageWrapper::prescaleImages);
+
+        imageWrapper.forEach(w -> w.getImagePanel().getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)));
+//        progress.close();
+
+
+        this.gotoFirst();
     }
 
     @Override
@@ -187,11 +217,11 @@ public class PDFToPPMLocalController implements PDFViewerController {
         GZIPOutputStream gos = new GZIPOutputStream(fos);
         ObjectOutputStream oos = new ObjectOutputStream(gos);
 
-        LOG.info("Starting saving pre-rendered file: " + System.currentTimeMillis());
+        LOG.info("Starting saving pre-rendered file " + file.getAbsolutePath());
 
         oos.writeObject(originalImages);
 
-        LOG.info("Finished saving pre-rendered file: " + System.currentTimeMillis());
+        LOG.info("Finished saving pre-rendered file " + file.getAbsolutePath());
 
         oos.close();
         gos.close();
@@ -207,11 +237,11 @@ public class PDFToPPMLocalController implements PDFViewerController {
         GZIPInputStream gis = new GZIPInputStream(fis);
         ObjectInputStream ois = new ObjectInputStream(gis);
 
-        LOG.info("Starting loading pre-rendered file: " + System.currentTimeMillis());
+        LOG.info("Starting loading pre-rendered file " + file.getAbsolutePath());
 
         this.originalImages = (ArrayList<ImageIcon>) ois.readObject();
 
-        LOG.info("Finished loading pre-rendered file: " + System.currentTimeMillis());
+        LOG.info("Finished loading pre-rendered file " + file.getAbsolutePath());
 
         ois.close();
         gis.close();
@@ -220,24 +250,11 @@ public class PDFToPPMLocalController implements PDFViewerController {
         initScaling();
     }
 
-    /**
-     * Wrapper for starting the image-scaling-process
-     */
-    private void initScaling() {
-        imageWrapper.forEach(PDFToPPMImageWrapper::prescaleImages);
-
-        imageWrapper.forEach(w -> w.getImagePanel().getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)));
-//        progress.close();
-
-
-        this.gotoFirst();
-    }
-
 
     /**
      * A wrapper containing pre-rendered images and panels for the different display-locations.
      */
-    private class PDFToPPMImageWrapper {
+    private class PDFPrerenderedImageWrapper {
         /**
          * The to the correct size prerendered images for each wrapper.
          */
@@ -256,7 +273,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
         /**
          * The Constructor.
          */
-        PDFToPPMImageWrapper() {
+        PDFPrerenderedImageWrapper() {
             imageLabel = new JLabel();
             imageLabel.setBackground(Color.BLACK);
 
@@ -271,7 +288,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
          * Re-renders the displayed versions of the images to the currently used size.
          */
         private void prescaleImages() {
-            LOG.info("Begin scaling Images: " + System.currentTimeMillis());
+            LOG.info("Begin scaling images of panel " + imagePanel);
 
             images = originalImages.parallelStream().map(imageIcon -> {
                 Image i = imageIcon.getImage();
@@ -298,7 +315,7 @@ public class PDFToPPMLocalController implements PDFViewerController {
                 return new ImageIcon(imageScaled);
             }).collect(Collectors.toCollection(ArrayList::new));
 
-            LOG.info("Finished scaling Images: " + System.currentTimeMillis());
+            LOG.info("Finished scaling images of panel " + imagePanel);
         }
 
         public JPanel getImagePanel() {
@@ -314,72 +331,6 @@ public class PDFToPPMLocalController implements PDFViewerController {
          */
         public void refreshImage() {
             imageLabel.setIcon(images.get(currImageNumber));
-        }
-    }
-
-    /**
-     * This class converts a page of a PDF-document to an image using {@link Callable}s for parallel execution.
-     */
-    private class PDFToPPMConverter implements Callable<BufferedImage> {
-
-        /**
-         * The number of the page to be converted.
-         */
-        private final int page;
-
-        /**
-         * The path of the document to be converted.
-         */
-        private final String filePath;
-
-        /**
-         * A {@link CountDownLatch} managing the convert-process.
-         */
-        private final CountDownLatch latch;
-
-//        private final ProgressWindow progress;
-
-        /**
-         * The Constructor.
-         *
-         * @param page     The page-number.
-         * @param filePath The path to the PDF-document.
-         * @param latch    The {@link CountDownLatch}.
-         */
-        PDFToPPMConverter(int page, String filePath, CountDownLatch latch) {
-            this.page = page;
-            this.filePath = filePath;
-            this.latch = latch;
-//            this.progress = progress;
-        }
-
-        @Override
-        public BufferedImage call() throws Exception {
-            ProcessBuilder convertProcessBuilder = new ProcessBuilder("pdftoppm", "-f", Integer.toString(page), "-l", Integer.toString(page), "-rx", "200", "-ry", "200", "-png", filePath);
-            Process convertProcess;
-            BufferedImage image = null;
-
-            try {
-                convertProcess = convertProcessBuilder.start();
-
-                ArrayList<Byte> imageBytes = new ArrayList<>();
-
-                for (byte b : IOUtils.toByteArray(convertProcess.getInputStream())) {
-                    imageBytes.add(b);
-                }
-                ByteArrayInputStream bais = new ByteArrayInputStream(ArrayUtils.toPrimitive(imageBytes.toArray(new Byte[imageBytes.size()])));
-
-                image = ImageIO.read(bais);
-
-                latch.countDown();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            LOG.info(   page + " " + System.currentTimeMillis());
-//            progress.increaseProgress();
-
-            return image;
         }
     }
 }

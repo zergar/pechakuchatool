@@ -62,15 +62,6 @@ public interface PDFViewerController {
     }
 
     /**
-     * Evaluates whether a specific renderer supports loading pre-rendered presentations.
-     * @param pdfvc the PDF-renderer-controller
-     * @return The support-state
-     */
-    static boolean isLoadRenderedSupported(PDFViewerController pdfvc) {
-        return pdfvc instanceof PDFToPPMLocalController;
-    }
-
-    /**
      * Creates a new content container instance within the controller.
      */
     void createNewController();

@@ -6,13 +6,19 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.8
 
-mainClassName = 'main.PechaKuchaMain'
+mainClassName = 'main.Main'
 
 jar {
     manifest {
         attributes(
-                'Main-Class': 'main.PechaKuchaMain',
+                'Main-Class': mainClassName,
         )
+    }
+}
+
+run {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
     }
 }
 
@@ -42,9 +48,11 @@ dependencies {
     compile "org.icepdf.os:icepdf-viewer:6.2.2"
     compile 'com.levigo.jbig2:levigo-jbig2-imageio:2.0'
 
+
     compile group: 'com.1stleg', name: 'jnativehook', version: '2.1.0'
     compile group: 'commons-io', name: 'commons-io', version: '2.5'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+    compile 'commons-cli:commons-cli:1.4'
 
     compile 'org.bidib.jbidib.org.qbang.rxtx:rxtxcomm:2.2'
 
