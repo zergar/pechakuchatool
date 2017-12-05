@@ -61,6 +61,8 @@ A presentation can now be started from the current slide. You can do this by cli
 When using the "PDFToPPM-Local"-renderer it is now possible to save and load the pre-rendered presentations thus speeding up the process of switching slide-sets. The file-ending `*.pktool` should be used when working with pre-rendered presentations. 
 Save a presentation by clicking `File -> Save pre-rendered Presentation` or pressing `Ctrl + S`.
 a presentation by clicking `File -> Open pre-rendered Presentation` or pressing `Alt + O`.
+Note that loading pre-rendered presentations is supported even if `poppler-utils` are not installed.
+Simply pick the *pdftoppm-local*-renderer to laod a pre-rendered presentation.
 
 Also, it is now possible to pre-render every PDF-file within a folder for faster loading when using the *PopplerUtils*-renderer.
 To start a prerender use `java -jar pechakuchatool-§version§-all.jar -prerender <pathToFolder>`.
