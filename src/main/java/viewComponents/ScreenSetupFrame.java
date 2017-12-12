@@ -79,7 +79,7 @@ public class ScreenSetupFrame extends JDialog {
         return new SetupDTO((GraphicsDevice) screenSetupFrame.presScreenChooser.getSelectedItem(),
                 (GraphicsDevice) screenSetupFrame.lookupScreenChooser.getSelectedItem(),
                 (String) screenSetupFrame.pdfViewerChooser.getSelectedItem(),
-                Math.max(0, Math.min(Integer.parseInt(screenSetupFrame.timeToNextSlide.getText()), 99)),
+                Math.max(1, Math.min(Integer.parseInt(screenSetupFrame.timeToNextSlide.getText()), 99)),
                 Math.max(1, Math.min(Integer.parseInt(screenSetupFrame.maxSlides.getText()), Integer.MAX_VALUE)),
                 (screenSetupFrame.arduinoConnChooser.getSelectedIndex() == 1));
     }

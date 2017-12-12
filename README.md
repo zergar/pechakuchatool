@@ -68,7 +68,7 @@ The *.pktool*-files are always saved in the same folder of the input-PDFs.
 
 #### New Features in version v1.2.0
 
-It is now possible to set a maximum amount of slides to be displayed (default: 20, Interval: 0 -- MAX_INT) as well as a time per slide in seconds (default: 20, Interval: 1 -- 99) in the setup-screen.
+It is now possible to set a maximum amount of slides to be displayed (default: 20, Interval: 1 -- MAX_INT) as well as a time per slide in seconds (default: 20, Interval: 1 -- 99) in the setup-screen.
 The screen will switch to black if the maximum amount of slides has been reached (e.g. by default the 21st slide won't be shown anymore).
  It can be made visible again by clicking `View -> Toggle Black Screen` or pressing `Alt + B`. 
  
