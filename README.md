@@ -66,6 +66,16 @@ Also, it is now possible to pre-render every PDF-file within a folder for faster
 To start a prerender use `java -jar pechakuchatool-§version§-all.jar -prerender <pathToFolder>`.
 The *.pktool*-files are always saved in the same folder of the input-PDFs.
 
+#### New Features in version v1.2.0
+
+It is now possible to set a maximum amount of slides to be displayed (default: 20, Interval: 0 -- MAX_INT) as well as a time per slide in seconds (default: 20, Interval: 1 -- 99) in the setup-screen.
+The screen will switch to black if the maximum amount of slides has been reached (e.g. by default the 21st slide won't be shown anymore).
+ It can be made visible again by clicking `View -> Toggle Black Screen` or pressing `Alt + B`. 
+ 
+ **BUG:** Note, that when using the *IcePDF*-renderer and letting a presentation run to its end, the slides will only appear again by starting the presentation again. They cannot be made visible again using the way described above.
+
+Also, it is now possible to hide the slides-panels manually by clicking `View -> Toggle Black Screen` or pressing `Alt + B`. 
+
 ### Using an Arduino
 
 To use an Arduino, first the Arduino-sketch has to be loaded to the arduino itself.

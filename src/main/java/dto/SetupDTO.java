@@ -40,14 +40,26 @@ public class SetupDTO {
     String pdfViewer;
 
     /**
+     * The time in seconds after which the next slide appears.
+     */
+    int timePerSlide;
+
+    /**
+     * The amount of slides after which the screens should go black.
+     */
+    int maxSlides;
+
+    /**
      * A switch which determines whether an {@link arduino.ArduinoSerialConnection} shall be established.
      */
     boolean establishArduinoConn;
 
-    public SetupDTO(GraphicsDevice presentationScreen, GraphicsDevice lookupScreen, String pdfViewer, boolean establishArduinoConn) {
+    public SetupDTO(GraphicsDevice presentationScreen, GraphicsDevice lookupScreen, String pdfViewer, Integer timePerSlide, Integer maxSlides, boolean establishArduinoConn) {
         this.presentationScreen = presentationScreen;
         this.lookupScreen = lookupScreen;
         this.pdfViewer = pdfViewer;
+        this.timePerSlide = timePerSlide;
+        this.maxSlides = maxSlides;
         this.establishArduinoConn = establishArduinoConn;
     }
 
@@ -73,6 +85,22 @@ public class SetupDTO {
 
     public void setPdfViewer(String pdfViewer) {
         this.pdfViewer = pdfViewer;
+    }
+
+    public int getTimePerSlide() {
+        return timePerSlide;
+    }
+
+    public void setTimePerSlide(int timePerSlide) {
+        this.timePerSlide = timePerSlide;
+    }
+
+    public int getMaxSlides() {
+        return maxSlides;
+    }
+
+    public void setMaxSlides(int maxSlides) {
+        this.maxSlides = maxSlides;
     }
 
     public boolean isEstablishArduinoConn() {

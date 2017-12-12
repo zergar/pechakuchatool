@@ -34,6 +34,8 @@ public class ScreenSetupFrame extends JDialog {
     private JPanel mainPanel;
     private JComboBox pdfViewerChooser;
     private JComboBox arduinoConnChooser;
+    private JTextField timeToNextSlide;
+    private JTextField maxSlides;
 
     private static final String[] PDF_VIEWERS = {"icepdf", "pdftoppm-local"};
     private static final String[] NO_YES = {"No", "Yes"};
@@ -47,26 +49,6 @@ public class ScreenSetupFrame extends JDialog {
 //        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         startButton.requestFocus();
-    }
-
-
-    /**
-     * @noinspection ALL
-     */
-    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
-        if (currentFont == null) return null;
-        String resultName;
-        if (fontName == null) {
-            resultName = currentFont.getName();
-        } else {
-            Font testFont = new Font(fontName, Font.PLAIN, 10);
-            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
-                resultName = fontName;
-            } else {
-                resultName = currentFont.getName();
-            }
-        }
-        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
     }
 
 
@@ -97,6 +79,8 @@ public class ScreenSetupFrame extends JDialog {
         return new SetupDTO((GraphicsDevice) screenSetupFrame.presScreenChooser.getSelectedItem(),
                 (GraphicsDevice) screenSetupFrame.lookupScreenChooser.getSelectedItem(),
                 (String) screenSetupFrame.pdfViewerChooser.getSelectedItem(),
+                Math.max(0, Math.min(Integer.parseInt(screenSetupFrame.timeToNextSlide.getText()), 99)),
+                Math.max(1, Math.min(Integer.parseInt(screenSetupFrame.maxSlides.getText()), Integer.MAX_VALUE)),
                 (screenSetupFrame.arduinoConnChooser.getSelectedIndex() == 1));
     }
 
@@ -236,27 +220,81 @@ public class ScreenSetupFrame extends JDialog {
         label5.setText("Arduino-Connection?");
         gbc = new GridBagConstraints();
         gbc.gridx = 1;
-        gbc.gridy = 7;
+        gbc.gridy = 11;
         gbc.anchor = GridBagConstraints.WEST;
         panel1.add(label5, gbc);
         final JPanel spacer10 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 3;
-        gbc.gridy = 8;
+        gbc.gridy = 12;
         gbc.fill = GridBagConstraints.VERTICAL;
         panel1.add(spacer10, gbc);
         gbc = new GridBagConstraints();
         gbc.gridx = 3;
-        gbc.gridy = 7;
+        gbc.gridy = 11;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel1.add(arduinoConnChooser, gbc);
         final JPanel spacer11 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 2;
-        gbc.gridy = 7;
+        gbc.gridy = 11;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel1.add(spacer11, gbc);
+        final JLabel label6 = new JLabel();
+        label6.setText("Time to Next Slide (in sec)");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 7;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel1.add(label6, gbc);
+        final JPanel spacer12 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 7;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(spacer12, gbc);
+        final JPanel spacer13 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 8;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        panel1.add(spacer13, gbc);
+        final JLabel label7 = new JLabel();
+        label7.setText("Maximum Number of Slides");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 9;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel1.add(label7, gbc);
+        final JPanel spacer14 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 9;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(spacer14, gbc);
+        final JPanel spacer15 = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 10;
+        gbc.fill = GridBagConstraints.VERTICAL;
+        panel1.add(spacer15, gbc);
+        timeToNextSlide = new JTextField();
+        timeToNextSlide.setText("20");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 7;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(timeToNextSlide, gbc);
+        maxSlides = new JTextField();
+        maxSlides.setText("20");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 9;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel1.add(maxSlides, gbc);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridBagLayout());
         gbc = new GridBagConstraints();
@@ -266,12 +304,12 @@ public class ScreenSetupFrame extends JDialog {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(panel2, gbc);
-        final JPanel spacer12 = new JPanel();
+        final JPanel spacer16 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer12, gbc);
+        panel2.add(spacer16, gbc);
         startButton = new JButton();
         startButton.setText("Start");
         gbc = new GridBagConstraints();
@@ -288,24 +326,43 @@ public class ScreenSetupFrame extends JDialog {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         panel2.add(exitButton, gbc);
-        final JPanel spacer13 = new JPanel();
+        final JPanel spacer17 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 4;
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.VERTICAL;
-        panel2.add(spacer13, gbc);
-        final JPanel spacer14 = new JPanel();
+        panel2.add(spacer17, gbc);
+        final JPanel spacer18 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 5;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer14, gbc);
-        final JPanel spacer15 = new JPanel();
+        panel2.add(spacer18, gbc);
+        final JPanel spacer19 = new JPanel();
         gbc = new GridBagConstraints();
         gbc.gridx = 3;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel2.add(spacer15, gbc);
+        panel2.add(spacer19, gbc);
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) return null;
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
     }
 
     /**

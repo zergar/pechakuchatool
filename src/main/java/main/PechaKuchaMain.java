@@ -129,9 +129,11 @@ public class PechaKuchaMain {
     private NativeKeyListener nkl;
 
     /**
-     * The Logger.
+     * The GlobalScreen-Logger.
      */
     private Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
+
+    private static final Logger LOG = Logger.getLogger(PechaKuchaMain.class.getName());
 
     /**
      * Default constructor for running the PechaKuchaTool.
@@ -142,7 +144,7 @@ public class PechaKuchaMain {
         this.presStartTime = new AtomicLong(-1);
         this.nextPageTime = new AtomicLong(-1);
         this.nextSecTime = new AtomicLong(-1);
-        this.timeRemaining = new AtomicInteger(20);
+        this.timeRemaining = new AtomicInteger(settings.getTimePerSlide());
 
         this.settings = settings;
 
@@ -159,7 +161,7 @@ public class PechaKuchaMain {
         this.presStartTime = new AtomicLong(-1);
         this.nextPageTime = new AtomicLong(-1);
         this.nextSecTime = new AtomicLong(-1);
-        this.timeRemaining = new AtomicInteger(20);
+        this.timeRemaining = new AtomicInteger(settings.getTimePerSlide());
 
         this.settings = settings;
 
@@ -183,13 +185,14 @@ public class PechaKuchaMain {
         // arduino
         arduinoConn = new ArduinoSerialConnection(settings.isEstablishArduinoConn());
         arduinoConn.initialize();
-        arduinoConn.send("20");
+        arduinoConn.send(String.format("%02d", settings.getTimePerSlide()));
 
 
         // presentation-frame
         presFrame = new JFrame("PechaKucha Presentation-Window");
         presFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         presFrame.getContentPane().add(pdfViewerController.getDocContainer(0));
+        presFrame.getContentPane().setBackground(Color.BLACK);
 
         if (!(settings.getPresentationScreen() instanceof NoGraphicsDevice)) {
             presFrame.pack();
@@ -202,8 +205,9 @@ public class PechaKuchaMain {
         lookupFrame = new JFrame("PechaKucha Presentation-Tool");
         Container lookupPane = lookupFrame.getContentPane();
         lookupPane.setLayout(new BoxLayout(lookupPane, BoxLayout.X_AXIS));
+        lookupPane.setBackground(Color.BLACK);
 
-        timeRemainingLabel = new JLabel("20");
+        timeRemainingLabel = new JLabel(String.format("%02d", settings.getTimePerSlide()));
         timeRemainingLabel.setForeground(Color.WHITE);
         timeRemainingLabel.setBackground(Color.BLACK);
 
@@ -240,9 +244,14 @@ public class PechaKuchaMain {
 
         t = new Timer(4, e -> {
             if (System.currentTimeMillis() >= nextPageTime.get()) {
-                pdfViewerController.nextPage();
-                nextPageTime.set(presStartTime.get() + ((pdfViewerController.getCurrentPageNumber() + 1) * 20_000L));
-                timeRemaining.set(20);
+                if (pdfViewerController.getCurrentPageNumber() + 1 < settings.getMaxSlides()) {
+                    pdfViewerController.nextPage();
+                    nextPageTime.set(presStartTime.get() + ((pdfViewerController.getCurrentPageNumber() + 1) * settings.getTimePerSlide() * 1_000L));
+                    timeRemaining.set(settings.getTimePerSlide());
+                } else {
+                    pdfViewerController.setCursorVisibility(true);
+                    resetPresentation(false);
+                }
             }
 
             if (System.currentTimeMillis() >= nextSecTime.get()) {
@@ -265,7 +274,7 @@ public class PechaKuchaMain {
                     if (kc == NativeKeyEvent.VC_SPACE && !t.isRunning()) {
                         startPresentation(true);
                     } else if (kc == NativeKeyEvent.VC_R && t.isRunning()) {
-                        resetPresentation();
+                        resetPresentation(true);
                     } else if ((kc == NativeKeyEvent.VC_RIGHT || kc == NativeKeyEvent.VC_DOWN || kc == NativeKeyEvent.VC_PAGE_DOWN) && !t.isRunning()) {
                         pdfViewerController.nextPage();
                     } else if ((kc == NativeKeyEvent.VC_LEFT || kc == NativeKeyEvent.VC_UP || kc == NativeKeyEvent.VC_PAGE_UP) && !t.isRunning()) {
@@ -304,7 +313,7 @@ public class PechaKuchaMain {
                     if (kc == KeyEvent.VK_SPACE && !t.isRunning()) {
                         startPresentation(true);
                     } else if (kc == KeyEvent.VK_R && t.isRunning()) {
-                        resetPresentation();
+                        resetPresentation(true);
                     } else if ((kc == KeyEvent.VK_RIGHT || kc == KeyEvent.VK_DOWN || kc == KeyEvent.VK_PAGE_DOWN) && !t.isRunning()) {
                         pdfViewerController.nextPage();
                     } else if ((kc == KeyEvent.VK_LEFT || kc == KeyEvent.VK_UP || kc == KeyEvent.VK_PAGE_UP) && !t.isRunning()) {
@@ -323,6 +332,10 @@ public class PechaKuchaMain {
         }
     }
 
+    /**
+     * Creates the menu-mar of the lookup-frame.
+     * @return the menu-bar
+     */
     private JMenuBar createLookupMenuBar() {
         JMenuBar menuBar = new JMenuBar();
 
@@ -388,7 +401,7 @@ public class PechaKuchaMain {
         presMenu.add(startFromCurrSlide);
 
         JMenuItem resetPres = new JMenuItem("Reset Presentation");
-        resetPres.addActionListener(e -> resetPresentation());
+        resetPres.addActionListener(e -> resetPresentation(true));
         resetPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
         presMenu.add(resetPres);
 
@@ -399,6 +412,11 @@ public class PechaKuchaMain {
         fitPage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0));
         fitPage.addActionListener(e -> pdfViewerController.fitViewers());
         viewMenu.add(fitPage);
+
+        JMenuItem toggleBlack = new JMenuItem("Toggle Black Screen");
+        toggleBlack.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.ALT_MASK));
+        toggleBlack.addActionListener(e -> pdfViewerController.setScreenVisibility(!pdfViewerController.isScreenVisible()));
+        viewMenu.add(toggleBlack);
 
         JMenu helpMenu = new JMenu("Help");
         menuBar.add(helpMenu);
@@ -450,9 +468,12 @@ public class PechaKuchaMain {
             pdfViewerController.gotoFirst();
         }
 
+        pdfViewerController.setScreenVisibility(true);
+        pdfViewerController.setCursorVisibility(false);
+
         long pStart = System.currentTimeMillis();
         presStartTime.set(pStart);
-        nextPageTime.set(pStart + 20_000);
+        nextPageTime.set(pStart + settings.getTimePerSlide() * 1_000);
         nextSecTime.set(pStart + 1_000);
 
         t.start();
@@ -461,13 +482,18 @@ public class PechaKuchaMain {
     /**
      * Reset the presentation.
      */
-    private void resetPresentation() {
+    private void resetPresentation(boolean setVisible) {
         t.stop();
         pdfViewerController.gotoFirst();
-        timeRemainingLabel.setText("20");
-        arduinoConn.send("20");
-        timeRemaining.set(20);
+        timeRemainingLabel.setText(String.format("%02d", settings.getTimePerSlide()));
+        arduinoConn.send(String.format("%02d", settings.getTimePerSlide()));
+        timeRemaining.set(settings.getTimePerSlide());
+
+//        LOG.info("Toggling frames to visible: " + setVisible);
+        pdfViewerController.setScreenVisibility(setVisible);
+//        LOG.info("Visibility is now " + pdfViewerController.isScreenVisible());
     }
+
 
     /**
      * Select a file via the {@link JFileChooser}

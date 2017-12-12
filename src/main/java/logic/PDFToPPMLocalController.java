@@ -125,13 +125,40 @@ public class PDFToPPMLocalController implements PDFViewerController, Saveable {
     }
 
     @Override
+    public void setScreenVisibility(boolean visible) {
+        imageWrapper.forEach(w -> w.getImageLabel().setVisible(visible));
+    }
+
+    @Override
+    public boolean isScreenVisible() {
+        return imageWrapper.stream().map(PDFPrerenderedImageWrapper::getImageLabel).allMatch(Component::isVisible);
+    }
+
+    @Override
+    public void setCursorVisibility(boolean visible) {
+        // Transparent 16 x 16 pixel cursor image.
+        BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+
+        // Create a new blank cursor.
+        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                cursorImg, new Point(0, 0), "blank cursor");
+
+        if (visible) {
+            imageWrapper.forEach(w -> w.getImagePanel().setCursor(Cursor.getDefaultCursor()));
+        } else {
+            imageWrapper.forEach(w -> w.getImagePanel().setCursor(blankCursor));
+        }
+    }
+
+    @Override
     public void loadNewFile(String filePath) throws IOException, PDFException, PDFSecurityException, InterruptedException, ExecutionException {
         loadNewFile(filePath, false);
     }
 
     /**
      * Superfunction used by {@link PDFToPPMLocalController#loadNewFile(String)}, additional Parameter to prevent scaling after conversion.
-     * @param filePath the File-path
+     *
+     * @param filePath   the File-path
      * @param scaleAfter whether the conversion should trigger the scaling-routine.
      * @throws IOException
      * @throws PDFException
@@ -209,6 +236,8 @@ public class PDFToPPMLocalController implements PDFViewerController, Saveable {
 
 
         this.gotoFirst();
+
+        this.setScreenVisibility(true);
     }
 
     @Override

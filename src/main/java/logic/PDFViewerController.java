@@ -103,7 +103,7 @@ public interface PDFViewerController {
 
     /**
      * Returns the number of the current page.
-     * @return The number of te current page.
+     * @return The number of the current page.
      */
     int getCurrentPageNumber();
 
@@ -111,6 +111,26 @@ public interface PDFViewerController {
      * Displays the first page of a document on every content-container.
      */
     void gotoFirst();
+
+    /**
+     * Set whether the slide-panels should be visible.
+     * Credits: https://stackoverflow.com/questions/1984071/how-to-hide-cursor-in-a-swing-application
+     * @param visible the visibility
+     */
+    void setScreenVisibility(boolean visible);
+
+    /**
+     * Returns the visibility of the slide-panels.
+     * Returns false if at least one slide-panel is not visible.
+     * @return
+     */
+    boolean isScreenVisible();
+
+    /**
+     * Set whether the cursor should be visible on the slide-panels.
+     * @param visible the visibility
+     */
+    void setCursorVisibility(boolean visible);
 
     /**
      * Loads a new PDF-Document into the controller.
@@ -130,5 +150,10 @@ public interface PDFViewerController {
      */
     boolean savePresentationToFile(File file) throws IOException;
 
+    /**
+     * Loads a Presentation from a location within the filesystem.
+     * @param file the path to be loaded from
+     * @throws IOException
+     */
     void loadPresentationFromFile(File file) throws IOException, ClassNotFoundException;
 }
