@@ -118,6 +118,11 @@ public class PDFToPPMLocalController implements PDFViewerController, Saveable {
     }
 
     @Override
+    public int getPageCount() {
+        return originalImages.size();
+    }
+
+    @Override
     public void gotoFirst() {
         currImageNumber = 0;
 
@@ -152,7 +157,7 @@ public class PDFToPPMLocalController implements PDFViewerController, Saveable {
 
     @Override
     public void loadNewFile(String filePath) throws IOException, PDFException, PDFSecurityException, InterruptedException, ExecutionException {
-        loadNewFile(filePath, false);
+        loadNewFile(filePath, true);
     }
 
     /**

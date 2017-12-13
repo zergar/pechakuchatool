@@ -106,6 +106,11 @@ public class IcePDFController implements PDFViewerController {
     }
 
     @Override
+    public int getPageCount() {
+        return controllers.get(0).getController().getPageTree().getNumberOfPages();
+    }
+
+    @Override
     public void gotoFirst() {
         controllers.forEach(c -> c.getController().showPage(0));
     }

@@ -108,6 +108,12 @@ public interface PDFViewerController {
     int getCurrentPageNumber();
 
     /**
+     * Returns the number of slides of a given presentation.
+     * @return The number of slides.
+     */
+    int getPageCount();
+
+    /**
      * Displays the first page of a document on every content-container.
      */
     void gotoFirst();

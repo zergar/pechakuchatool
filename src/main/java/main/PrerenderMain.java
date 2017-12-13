@@ -37,16 +37,29 @@ import java.util.stream.Collectors;
  */
 public class PrerenderMain {
 
+    /**
+     * The {@link Logger}.
+     */
     private static final Logger LOG = Logger.getLogger(PrerenderMain.class.getName());
 
+    /**
+     * The path of the folder containing the presentations to prerender.
+     */
     private File inputPath;
 
+    /**
+     * The constructor.
+     * @param path The inputPath
+     */
     public PrerenderMain(String path) {
         this.inputPath = new File(path);
 
         setup();
     }
 
+    /**
+     * The setup-method.
+     */
     private void setup() {
         ArrayList<File> files = new ArrayList<>(Arrays.asList((inputPath.listFiles())));
 
@@ -54,6 +67,10 @@ public class PrerenderMain {
                 .parallelStream().forEach(this::convertPresentation);
     }
 
+    /**
+     * The method which manages the conversion.
+     * @param file The path of the presentation to be rendered.
+     */
     private void convertPresentation(File file) {
         LOG.info("Starting rendering " + file.getName());
 

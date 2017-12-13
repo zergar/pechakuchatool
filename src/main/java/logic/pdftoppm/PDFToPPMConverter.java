@@ -72,7 +72,7 @@ public class PDFToPPMConverter implements Callable<BufferedImage> {
     }
 
     @Override
-    public BufferedImage call() throws Exception {
+    public BufferedImage call() {
         ProcessBuilder convertProcessBuilder = new ProcessBuilder("pdftoppm", "-f", Integer.toString(page),
                 "-l", Integer.toString(page), "-r", "220", "-png", filePath);
         Process convertProcess;
@@ -95,7 +95,7 @@ public class PDFToPPMConverter implements Callable<BufferedImage> {
             e.printStackTrace();
         }
 
-        LOG.info("Finished rendering page " + page);
+        LOG.info("Finished rendering page " + page + " fo file " + filePath);
 //            progress.increaseProgress();
 
         return image;

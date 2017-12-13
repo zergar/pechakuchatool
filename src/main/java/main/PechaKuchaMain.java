@@ -18,6 +18,7 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -242,25 +243,7 @@ public class PechaKuchaMain {
 
         // timer
 
-        t = new Timer(4, e -> {
-            if (System.currentTimeMillis() >= nextPageTime.get()) {
-                if (pdfViewerController.getCurrentPageNumber() + 1 < settings.getMaxSlides()) {
-                    pdfViewerController.nextPage();
-                    nextPageTime.set(presStartTime.get() + ((pdfViewerController.getCurrentPageNumber() + 1) * settings.getTimePerSlide() * 1_000L));
-                    timeRemaining.set(settings.getTimePerSlide());
-                } else {
-                    pdfViewerController.setCursorVisibility(true);
-                    resetPresentation(false);
-                }
-            }
-
-            if (System.currentTimeMillis() >= nextSecTime.get()) {
-                String timeString = String.format("%02d", timeRemaining.get());
-                updateSeconds(timeString);
-                timeRemaining.decrementAndGet();
-                nextSecTime.set(nextPageTime.get() - (timeRemaining.get() * 1_000));
-            }
-        });
+        t = new Timer(4, this::setTimer);
 
 
         // keyboard
@@ -334,6 +317,7 @@ public class PechaKuchaMain {
 
     /**
      * Creates the menu-mar of the lookup-frame.
+     *
      * @return the menu-bar
      */
     private JMenuBar createLookupMenuBar() {
@@ -343,19 +327,15 @@ public class PechaKuchaMain {
         menuBar.add(fileMenu);
 
         JMenuItem openFile = new JMenuItem("Open File");
-        openFile.addActionListener(e -> {
-            try {
-                pdfViewerController.loadNewFile(openDocument(lookupFrame).getAbsolutePath());
-            } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException err) {
-                err.printStackTrace();
-            }
-        });
+        openFile.addActionListener(e -> openDocument(lookupFrame));
         openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
         fileMenu.add(openFile);
 
         fileMenu.addSeparator();
 
-        if (pdfViewerController instanceof Saveable) {
+        if (pdfViewerController instanceof Saveable)
+
+        {
             JMenuItem openPreRenderedFile = new JMenuItem("Open pre-rendered Presentation");
             openPreRenderedFile.addActionListener(e -> {
                 try {
@@ -382,7 +362,9 @@ public class PechaKuchaMain {
         }
 
         JMenuItem exit = new JMenuItem("Exit");
-        exit.addActionListener(e -> exit());
+        exit.addActionListener(e ->
+
+                exit());
         exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_MASK));
         fileMenu.add(exit);
 
@@ -391,17 +373,23 @@ public class PechaKuchaMain {
         menuBar.add(presMenu);
 
         JMenuItem startPres = new JMenuItem("Start Presentation");
-        startPres.addActionListener(e -> startPresentation(true));
+        startPres.addActionListener(e ->
+
+                startPresentation(true));
         startPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
         presMenu.add(startPres);
 
         JMenuItem startFromCurrSlide = new JMenuItem("Start Presentation from current Slide");
-        startFromCurrSlide.addActionListener(e -> startPresentation(false));
+        startFromCurrSlide.addActionListener(e ->
+
+                startPresentation(false));
         startFromCurrSlide.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.ALT_MASK));
         presMenu.add(startFromCurrSlide);
 
         JMenuItem resetPres = new JMenuItem("Reset Presentation");
-        resetPres.addActionListener(e -> resetPresentation(true));
+        resetPres.addActionListener(e ->
+
+                resetPresentation(true));
         resetPres.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
         presMenu.add(resetPres);
 
@@ -422,9 +410,45 @@ public class PechaKuchaMain {
         menuBar.add(helpMenu);
 
         JMenuItem about = new JMenuItem("About");
-        about.addActionListener(e -> showAboutText());
+        about.addActionListener(e ->
+
+                showAboutText());
         helpMenu.add(about);
         return menuBar;
+    }
+
+    /**
+     * Setting up the {@link Timer}
+     *
+     * @param e the Timer-Event.
+     */
+    private void setTimer(ActionEvent e) {
+        if (System.currentTimeMillis() >= nextPageTime.get()) {
+            if (pdfViewerController.getCurrentPageNumber() + 1 >= settings.getMaxSlides() && settings.getMaxSlides() <= pdfViewerController.getPageCount()) {
+                pdfViewerController.setCursorVisibility(true);
+                resetPresentation(false);
+
+                return;
+            } else if (pdfViewerController.getCurrentPageNumber() + 1 >= pdfViewerController.getPageCount() && settings.getMaxSlides() > pdfViewerController.getPageCount()) {
+                t.stop();
+                pdfViewerController.setCursorVisibility(true);
+
+                LOG.info("reached page count");
+
+                return;
+            } else {
+                pdfViewerController.nextPage();
+                nextPageTime.set(presStartTime.get() + ((pdfViewerController.getCurrentPageNumber() + 1) * settings.getTimePerSlide() * 1_000L));
+                timeRemaining.set(settings.getTimePerSlide());
+            }
+        }
+
+        if (System.currentTimeMillis() >= nextSecTime.get()) {
+            String timeString = String.format("%02d", timeRemaining.get());
+            updateSeconds(timeString);
+            timeRemaining.decrementAndGet();
+            nextSecTime.set(nextPageTime.get() - (timeRemaining.get() * 1_000));
+        }
     }
 
     /**
@@ -485,13 +509,18 @@ public class PechaKuchaMain {
     private void resetPresentation(boolean setVisible) {
         t.stop();
         pdfViewerController.gotoFirst();
+        initSeconds();
+
+        pdfViewerController.setScreenVisibility(setVisible);
+    }
+
+    /**
+     *
+     */
+    private void initSeconds() {
         timeRemainingLabel.setText(String.format("%02d", settings.getTimePerSlide()));
         arduinoConn.send(String.format("%02d", settings.getTimePerSlide()));
         timeRemaining.set(settings.getTimePerSlide());
-
-//        LOG.info("Toggling frames to visible: " + setVisible);
-        pdfViewerController.setScreenVisibility(setVisible);
-//        LOG.info("Visibility is now " + pdfViewerController.isScreenVisible());
     }
 
 
@@ -501,12 +530,20 @@ public class PechaKuchaMain {
      * @param parent the frame of the {@link JFileChooser}
      * @return the File
      */
-    private File openDocument(JFrame parent) {
+    private void openDocument(JFrame parent) {
         int returnVal = newPresChooser.showOpenDialog(parent);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
-            return newPresChooser.getSelectedFile();
+
+            try {
+                pdfViewerController.loadNewFile(newPresChooser.getSelectedFile().getAbsolutePath());
+
+                parent.setTitle("PechaKucha Presentation-Tool - " + newPresChooser.getSelectedFile().getName());
+                initSeconds();
+            } catch (IOException | PDFException | PDFSecurityException | InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         } else {
-            return null;
+
         }
     }
 
@@ -596,6 +633,9 @@ public class PechaKuchaMain {
             int returnVal = renderedPresChooser.showOpenDialog(parent);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 pdfViewerController.loadPresentationFromFile(renderedPresChooser.getSelectedFile());
+
+                parent.setTitle("PechaKucha Presentation-Tool - " + renderedPresChooser.getSelectedFile().getName());
+                initSeconds();
             } else {
                 JOptionPane.showMessageDialog(parent, "An error occured while loading the given pre-rendered file.",
                         "Error while loading", JOptionPane.ERROR_MESSAGE);
