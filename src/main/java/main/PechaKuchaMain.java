@@ -512,6 +512,7 @@ public class PechaKuchaMain {
         initSeconds();
 
         pdfViewerController.setScreenVisibility(setVisible);
+        pdfViewerController.setCursorVisibility(true);
     }
 
     /**
